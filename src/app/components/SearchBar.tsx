@@ -22,30 +22,33 @@ const SearchBar = () => {
   const fetchSuggestions = useCallback(async (search: string) => {
     if (search.length < 2) {
       setSuggestions([]);
+      setIsLoading(false); // Reset loading when query is too short
       return;
     }
 
     const cacheKey = `suggestions:${search}`;
     const cached = suggestionCache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log("Using cached suggestions for:", search);
       setSuggestions(cached.data);
+      setIsLoading(false); // Reset loading for cached results
       return;
     }
 
-    setIsLoading(true);
+    console.log("Fetching suggestions");
     try {
       const results = await apiClient.searchDrugs(search, { limit: 10 });
+      console.log("API results:", results);
       setSuggestions(results);
       suggestionCache[cacheKey] = { data: results, timestamp: Date.now() };
     } catch (error) {
       console.error("Error fetching suggestions:", error);
       setSuggestions([]);
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Reset loading after fetch
     }
   }, []);
 
-  // Initialize debounce function once and reuse it
   useEffect(() => {
     debouncedFetchRef.current = debounce((search: string) => {
       fetchSuggestions(search);
@@ -58,9 +61,11 @@ const SearchBar = () => {
 
   useEffect(() => {
     if (query.trim()) {
+      setIsLoading(true); // Show spinner as soon as user types
       debouncedFetchRef.current?.(query);
     } else {
       setSuggestions([]);
+      setIsLoading(false); // Hide spinner when query is cleared
     }
   }, [query]);
 
@@ -70,12 +75,14 @@ const SearchBar = () => {
       router.push(`/drug/${encodeURIComponent(query.trim())}`);
       setQuery("");
       setSuggestions([]);
+      setIsLoading(false);
     }
   };
 
   const handleClear = () => {
     setQuery("");
     setSuggestions([]);
+    setIsLoading(false);
   };
 
   const handleSuggestionClick = useCallback(
@@ -83,6 +90,7 @@ const SearchBar = () => {
       router.push(`/drug/${encodeURIComponent(drugName)}`);
       setQuery("");
       setSuggestions([]);
+      setIsLoading(false);
     },
     [router]
   );
@@ -121,13 +129,16 @@ const SearchBar = () => {
           <button
             type="submit"
             disabled={!query.trim() || isLoading}
-            className={styles.searchButton}
+            className={`${styles.searchButton} ${
+              isLoading ? styles.loading : ""
+            }`}
             aria-label="Search"
           >
             {isLoading ? (
-              <span className={styles.spinner}>
+              <>
+                <span className={styles.spinnerDots}></span>
                 <FaArrowRight />
-              </span>
+              </>
             ) : (
               <>
                 <span>Search</span>
@@ -151,8 +162,10 @@ const SearchBar = () => {
                 >
                   <div className={styles.suggestionContent}>
                     <span className={styles.drugName}>{drug.name}</span>
-                    {drug.tradeName && (
-                      <span className={styles.tradeName}>{drug.tradeName}</span>
+                    {drug.trade_name && (
+                      <span className={styles.tradeName}>
+                        {drug.trade_name}
+                      </span>
                     )}
                   </div>
                   <FaArrowRight className={styles.suggestionIcon} />

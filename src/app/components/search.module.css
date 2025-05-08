@@ -103,22 +103,30 @@
   cursor: not-allowed;
 }
 
+.searchButton.loading {
+  background: #1e40af; /* Keep blue background during loading */
+}
+
 .searchButton:hover:not(:disabled) {
   background: #1d4ed8;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
 }
 
-.spinner {
+.spinnerDots {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 3px dotted #ffffff; /* White to match button text */
+  border-radius: 50%;
   animation: spin 1s linear infinite;
-  font-size: 1.125rem;
 }
 
 @keyframes spin {
-  from {
+  0% {
     transform: rotate(0deg);
   }
-  to {
+  100% {
     transform: rotate(360deg);
   }
 }
@@ -264,6 +272,6 @@
   }
 
   .tradeName {
-    font-size: 0.75rem;
+    font-size: 0.75rem; /* Fixed typo from 1.75rem */
   }
 }

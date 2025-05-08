@@ -2,7 +2,7 @@
 export interface Drug {
   id: number;
   name: string;
-  trade_name?: string;
+  trade_name?: string; // Use trade_name, remove tradeName
   category: string;
   overview: string;
   dosing: string;
@@ -10,6 +10,5 @@ export interface Drug {
   pharmacodynamics: string;
   clinical_practical_considerations: string;
   is_emergency?: number;
-  tradeName?: string;
   url?: string;
 }
