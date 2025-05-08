@@ -14,15 +14,18 @@ const CACHE_DURATION = 5 * 60 * 1000;
 const SearchBar = () => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Drug[]>([]);
+  const [searchResults, setSearchResults] = useState<Drug[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
   const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
 
   const fetchSuggestions = useCallback(async (search: string) => {
     if (search.length < 2) {
       setSuggestions([]);
-      setIsLoading(false); // Reset loading when query is too short
+      setIsLoading(false);
+      setMessage(null);
       return;
     }
 
@@ -31,7 +34,8 @@ const SearchBar = () => {
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       console.log("Using cached suggestions for:", search);
       setSuggestions(cached.data);
-      setIsLoading(false); // Reset loading for cached results
+      setIsLoading(false);
+      setMessage(null);
       return;
     }
 
@@ -41,11 +45,36 @@ const SearchBar = () => {
       console.log("API results:", results);
       setSuggestions(results);
       suggestionCache[cacheKey] = { data: results, timestamp: Date.now() };
+      setMessage(null);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
       setSuggestions([]);
+      setMessage("Failed to fetch suggestions. Please try again.");
     } finally {
-      setIsLoading(false); // Reset loading after fetch
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchFullSearchResults = useCallback(async (search: string) => {
+    console.log("Fetching full search results");
+    try {
+      const results = await apiClient.searchDrugs(search, {});
+      const sortedResults = results.sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      console.log("Full API results:", sortedResults);
+      setSearchResults(sortedResults);
+      setMessage(
+        sortedResults.length === 0
+          ? "No results found. Please refine your search."
+          : null
+      );
+    } catch (error) {
+      console.error("Error fetching full search results:", error);
+      setSearchResults([]);
+      setMessage("Failed to fetch search results. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -61,28 +90,45 @@ const SearchBar = () => {
 
   useEffect(() => {
     if (query.trim()) {
-      setIsLoading(true); // Show spinner as soon as user types
+      setIsLoading(true);
       debouncedFetchRef.current?.(query);
     } else {
       setSuggestions([]);
-      setIsLoading(false); // Hide spinner when query is cleared
+      setSearchResults([]);
+      setIsLoading(false);
+      setMessage(null);
     }
   }, [query]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      router.push(`/drug/${encodeURIComponent(query.trim())}`);
-      setQuery("");
-      setSuggestions([]);
-      setIsLoading(false);
+    if (!query.trim()) {
+      setMessage("Please enter a search query.");
+      return;
     }
+
+    setIsLoading(true);
+    setMessage(null);
+    setSearchResults([]);
+    setSuggestions([]); // Clear suggestions on search
+
+    if (query.trim().length === 3) {
+      setMessage(
+        "Your search yields too many results. Please narrow your search further."
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    await fetchFullSearchResults(query.trim());
   };
 
   const handleClear = () => {
     setQuery("");
     setSuggestions([]);
+    setSearchResults([]);
     setIsLoading(false);
+    setMessage(null);
   };
 
   const handleSuggestionClick = useCallback(
@@ -90,7 +136,9 @@ const SearchBar = () => {
       router.push(`/drug/${encodeURIComponent(drugName)}`);
       setQuery("");
       setSuggestions([]);
+      setSearchResults([]);
       setIsLoading(false);
+      setMessage(null);
     },
     [router]
   );
@@ -148,33 +196,52 @@ const SearchBar = () => {
           </button>
         </div>
       </form>
-      {(suggestions.length > 0 || (query.length >= 2 && !isLoading)) && (
+      {message && <div className={styles.message}>{message}</div>}
+      {isFocused && suggestions.length > 0 && !searchResults.length && (
         <div className={styles.suggestionsContainer}>
-          {suggestions.length > 0 ? (
-            <ul className={styles.suggestionsList}>
-              {suggestions.map((drug) => (
-                <li
-                  key={drug.name}
-                  className={styles.suggestionItem}
-                  onClick={() => handleSuggestionClick(drug.name)}
-                  role="option"
-                  aria-selected="false"
-                >
-                  <div className={styles.suggestionContent}>
-                    <span className={styles.drugName}>{drug.name}</span>
-                    {drug.trade_name && (
-                      <span className={styles.tradeName}>
-                        {drug.trade_name}
-                      </span>
-                    )}
-                  </div>
-                  <FaArrowRight className={styles.suggestionIcon} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className={styles.noResults}>No results found</div>
-          )}
+          <ul className={styles.suggestionsList}>
+            {suggestions.map((drug) => (
+              <li
+                key={drug.name}
+                className={styles.suggestionItem}
+                onClick={() => handleSuggestionClick(drug.name)}
+                role="option"
+                aria-selected="false"
+              >
+                <div className={styles.suggestionContent}>
+                  <span className={styles.drugName}>{drug.name}</span>
+                  {drug.trade_name && (
+                    <span className={styles.tradeName}>{drug.trade_name}</span>
+                  )}
+                </div>
+                <FaArrowRight className={styles.suggestionIcon} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {searchResults.length > 0 && (
+        <div className={styles.resultsContainer}>
+          <h3 className={styles.resultsTitle}>Search Results</h3>
+          <ul className={styles.resultsList}>
+            {searchResults.map((drug) => (
+              <li
+                key={drug.name}
+                className={styles.resultItem}
+                onClick={() => handleSuggestionClick(drug.name)}
+                role="option"
+                aria-selected="false"
+              >
+                <div className={styles.resultContent}>
+                  <span className={styles.drugName}>{drug.name}</span>
+                  {drug.trade_name && (
+                    <span className={styles.tradeName}>{drug.trade_name}</span>
+                  )}
+                </div>
+                <FaArrowRight className={styles.resultIcon} />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
