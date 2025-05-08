@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: drugbit-frontend
+    env: node
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NEXT_PUBLIC_GA_ID
+        sync: false # Set manually in Render dashboard
+      - key: NEXT_PUBLIC_API_URL
+        value: https://data.drugbit.info # Update if backend Render URL changes

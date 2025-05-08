@@ -1,0 +1,128 @@
+.drugInfo {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  margin-top: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.backButton {
+  background: linear-gradient(
+    90deg,
+    #1e40af 0%,
+    #fb923c 100%
+  ); /* Blue to orange gradient */
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600; /* Bolder for prominence */
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); /* Subtle shadow for text readability */
+  margin-bottom: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backButton:hover {
+  background: linear-gradient(
+    90deg,
+    #1d4ed8 0%,
+    #f59e0b 100%
+  ); /* Shifted gradient */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.backButton:focus {
+  outline: none;
+  border: 2px solid #2dd4bf; /* Teal focus state */
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.3);
+}
+
+.drugName {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 16px;
+}
+
+.tradeName {
+  font-size: 1.25rem;
+  font-weight: 300;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.category,
+.description,
+.dosage,
+.sideEffects,
+.contraindications {
+  font-size: 1rem;
+  color: #374151;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.category strong,
+.dosage strong,
+.sideEffects strong,
+.contraindications strong {
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .drugInfo {
+    padding: 24px;
+    margin-top: 24px;
+  }
+
+  .backButton {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+  }
+
+  .drugName {
+    font-size: 1.75rem;
+  }
+
+  .tradeName {
+    font-size: 1rem;
+  }
+
+  .category,
+  .description,
+  .dosage,
+  .sideEffects,
+  .contraindications {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .drugInfo {
+    padding: 16px;
+  }
+
+  .backButton {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+  }
+
+  .drugName {
+    font-size: 1.5rem;
+  }
+
+  .tradeName {
+    font-size: 0.875rem;
+  }
+}

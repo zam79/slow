@@ -1,0 +1,116 @@
+/* Add or update these styles in page.module.css */
+.header {
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 16px 0;
+  position: relative;
+  z-index: 100;
+}
+
+.headerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.titleWrapper {
+  text-align: center;
+}
+
+.heading {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.brand {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #3b82f6;
+}
+
+.searchWrapper {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Ensure existing styles for main, introSection, introCard, etc. remain unchanged */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.introSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.introCard {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.cardIcon {
+  font-size: 2rem;
+  color: #3b82f6;
+  margin-bottom: 16px;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.cardText {
+  font-size: 1rem;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.footer {
+  background: #f9fafb;
+  padding: 16px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .headerContent {
+    padding: 0 8px;
+    gap: 12px;
+  }
+  .heading {
+    font-size: 1.75rem;
+  }
+  .brand {
+    font-size: 1rem;
+  }
+  .main {
+    padding: 16px 8px;
+  }
+  .introSection {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .introCard {
+    padding: 16px;
+  }
+  .cardTitle {
+    font-size: 1.25rem;
+  }
+}

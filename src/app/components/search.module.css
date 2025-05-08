@@ -1,0 +1,269 @@
+.searchContainer {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
+  border: 2px solid #1e3a8a;
+  overflow: visible; /* Changed from hidden to prevent clipping */
+}
+
+.inputWrapper.focused {
+  border-color: #2dd4bf;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+}
+
+.searchIconWrapper {
+  padding: 0 16px;
+  color: #1e40af;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  font-size: 1.5rem;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 16px 0;
+  border: none;
+  outline: none;
+  font-size: 1.25rem;
+  font-weight: 650;
+  font-family: var(--font-inter), sans-serif;
+  background: transparent;
+  color: #1e3a8a;
+  box-shadow: none !important;
+}
+
+.searchInput:invalid {
+  box-shadow: none;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #6b7280;
+  font-weight: 500;
+  opacity: 1;
+}
+
+.clearButton {
+  background: none;
+  border: none;
+  padding: 0 12px;
+  cursor: pointer;
+  color: #1e40af;
+  transition: color 0.2s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.clearButton:hover {
+  color: #2dd4bf;
+  transform: scale(1.15);
+}
+
+.clearIcon {
+  font-size: 1.125rem;
+}
+
+.searchButton {
+  background: #1e40af;
+  color: #ffffff;
+  border: none;
+  padding: 16px 28px;
+  cursor: pointer;
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-family: var(--font-inter), sans-serif;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  border-radius: 0 16px 16px 0;
+  box-sizing: border-box; /* Ensure padding doesn't increase width */
+}
+
+.searchButton:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.searchButton:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  font-size: 1.125rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.suggestionsContainer {
+  position: absolute;
+  width: 100%;
+  margin-top: 12px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.3s ease;
+}
+
+.suggestionsList {
+  list-style: none;
+  padding: 8px 0;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.suggestionItem {
+  padding: 12px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.2s ease;
+}
+
+.suggestionItem:hover,
+.suggestionItem:focus {
+  background: #eff6ff;
+}
+
+.suggestionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drugName {
+  font-weight: 500;
+  font-size: 1rem;
+  color: #1e3a8a;
+}
+
+.tradeName {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.suggestionIcon {
+  color: #2dd4bf;
+  font-size: 1rem;
+}
+
+.noResults {
+  padding: 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .searchContainer {
+    max-width: 100%;
+  }
+
+  .inputWrapper {
+    border-radius: 12px;
+    border-width: 1.5px;
+  }
+
+  .searchInput {
+    padding: 14px 0;
+    font-size: 1.125rem;
+    font-weight: 600; /* Bold font for mobile */
+  }
+
+  .searchButton {
+    padding: 14px 16px; /* Further reduced padding to narrow button */
+    font-size: 1rem;
+    border-radius: 0 12px 12px 0;
+    margin-right: 8px; /* Increased to ensure curve visibility */
+    box-sizing: border-box; /* Ensure padding doesn't increase width */
+  }
+
+  .searchIconWrapper {
+    padding: 0 12px;
+  }
+
+  .searchIcon {
+    font-size: 1.25rem;
+  }
+
+  .clearButton {
+    padding: 0 10px;
+  }
+
+  .clearIcon {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .searchButton span {
+    display: none;
+  }
+
+  .searchButton {
+    padding: 14px 12px; /* Further reduced for smaller screens */
+    border-radius: 0 12px 12px 0;
+    margin-right: 8px; /* Consistent margin for curve visibility */
+    box-sizing: border-box;
+  }
+
+  .searchIconWrapper {
+    padding: 0 10px;
+  }
+
+  .suggestionItem {
+    padding: 10px 16px;
+  }
+
+  .drugName {
+    font-size: 0.875rem;
+  }
+
+  .tradeName {
+    font-size: 0.75rem;
+  }
+}

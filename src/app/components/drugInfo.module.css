@@ -1,0 +1,144 @@
+.container {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  margin-top: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 16px;
+}
+
+.tradeName {
+  font-size: 1.25rem;
+  font-weight: 300;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.category {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.overview {
+  font-size: 1rem;
+  color: #374151;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  background: linear-gradient(
+    90deg,
+    #1e40af 0%,
+    #fb923c 100%
+  ); /* Blue to orange gradient */
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600; /* Bolder for prominence */
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); /* Subtle shadow for text readability */
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sectionTitle:hover {
+  background: linear-gradient(
+    90deg,
+    #1d4ed8 0%,
+    #f59e0b 100%
+  ); /* Shifted gradient */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.sectionTitle:focus {
+  outline: none;
+  border: 2px solid #2dd4bf; /* Teal focus state */
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.3);
+}
+
+.arrow {
+  font-size: 0.75rem;
+}
+
+.sectionContent {
+  padding: 16px;
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+  background: #f5f7fa;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 24px;
+    margin-top: 24px;
+  }
+
+  .name {
+    font-size: 1.75rem;
+  }
+
+  .tradeName {
+    font-size: 1rem;
+  }
+
+  .category,
+  .overview {
+    font-size: 0.875rem;
+  }
+
+  .sectionTitle {
+    padding: 8px 12px;
+    font-size: 0.875rem;
+  }
+
+  .sectionContent {
+    padding: 12px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 16px;
+  }
+
+  .name {
+    font-size: 1.5rem;
+  }
+
+  .tradeName {
+    font-size: 0.875rem;
+  }
+
+  .sectionTitle {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+}
