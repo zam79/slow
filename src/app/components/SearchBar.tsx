@@ -20,6 +20,8 @@ const SearchBar = () => {
   const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
   const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const fetchSuggestions = useCallback(async (search: string) => {
     if (search.length < 2) {
@@ -32,17 +34,14 @@ const SearchBar = () => {
     const cacheKey = `suggestions:${search}`;
     const cached = suggestionCache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log("Using cached suggestions for:", search);
       setSuggestions(cached.data);
       setIsLoading(false);
       setMessage(null);
       return;
     }
 
-    console.log("Fetching suggestions");
     try {
       const results = await apiClient.searchDrugs(search, { limit: 10 });
-      console.log("API results:", results);
       setSuggestions(results);
       suggestionCache[cacheKey] = { data: results, timestamp: Date.now() };
       setMessage(null);
@@ -56,13 +55,11 @@ const SearchBar = () => {
   }, []);
 
   const fetchFullSearchResults = useCallback(async (search: string) => {
-    console.log("Fetching full search results");
     try {
       const results = await apiClient.searchDrugs(search, {});
       const sortedResults = results.sort((a, b) =>
         a.name.localeCompare(b.name)
       );
-      console.log("Full API results:", sortedResults);
       setSearchResults(sortedResults);
       setMessage(
         sortedResults.length === 0
@@ -100,6 +97,22 @@ const SearchBar = () => {
     }
   }, [query]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsFocused(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) {
@@ -110,7 +123,7 @@ const SearchBar = () => {
     setIsLoading(true);
     setMessage(null);
     setSearchResults([]);
-    setSuggestions([]); // Clear suggestions on search
+    setSuggestions([]);
 
     if (query.trim().length === 3) {
       setMessage(
@@ -144,7 +157,7 @@ const SearchBar = () => {
   );
 
   return (
-    <div className={styles.searchContainer}>
+    <div className={styles.searchContainer} ref={containerRef}>
       <form onSubmit={handleSearch}>
         <div
           className={`${styles.inputWrapper} ${
@@ -159,7 +172,6 @@ const SearchBar = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             placeholder="Search drugs..."
             className={styles.searchInput}
             aria-label="Search drugs"
@@ -198,12 +210,13 @@ const SearchBar = () => {
       </form>
       {message && <div className={styles.message}>{message}</div>}
       {isFocused && suggestions.length > 0 && !searchResults.length && (
-        <div className={styles.suggestionsContainer}>
+        <div className={styles.suggestionsContainer} ref={suggestionsRef}>
           <ul className={styles.suggestionsList}>
             {suggestions.map((drug) => (
               <li
                 key={drug.name}
                 className={styles.suggestionItem}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSuggestionClick(drug.name)}
                 role="option"
                 aria-selected="false"
