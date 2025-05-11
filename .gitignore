@@ -6,11 +6,11 @@ out/
 node_modules/
 
 # Environment files (keep .env.example but ignore local ones)
-.env.local
+
 .env.development
 .env.test
 .env.production
-.env*.local
+
 
 # Build and cache directories
 dist/
