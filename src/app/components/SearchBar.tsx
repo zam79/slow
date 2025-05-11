@@ -222,7 +222,9 @@ const SearchBar = () => {
                 aria-selected="false"
               >
                 <div className={styles.suggestionContent}>
-                  <span className={styles.drugName}>{drug.name}</span>
+                  <span className={styles.drugName}>
+                    {drug.name.replace(/-/g, " ")} {/* Display with spaces */}
+                  </span>
                   {drug.trade_name && (
                     <span className={styles.tradeName}>{drug.trade_name}</span>
                   )}
@@ -246,7 +248,9 @@ const SearchBar = () => {
                 aria-selected="false"
               >
                 <div className={styles.resultContent}>
-                  <span className={styles.drugName}>{drug.name}</span>
+                  <span className={styles.drugName}>
+                    {drug.name.replace(/-/g, " ")} {/* Display with spaces */}
+                  </span>
                   {drug.trade_name && (
                     <span className={styles.tradeName}>{drug.trade_name}</span>
                   )}

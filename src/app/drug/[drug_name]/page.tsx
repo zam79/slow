@@ -1,5 +1,4 @@
-// src/app/drug/[drug_name]/page.tsx
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import DrugInfo from "../../components/DrugInfo";
@@ -9,21 +8,23 @@ import { Metadata } from "next";
 import styles from "../../page.module.css";
 import navStyles from "../../components/nav.module.css";
 
+// Module-scoped cache to persist across generateMetadata and DrugPage
+const drugCache = new Map<string, Drug | null>();
+
 const inter = Inter({
   weight: ["300", "500", "700"],
   subsets: ["latin"],
   variable: "--font-inter",
 });
 
-// Generate static paths for all drugs at build time
 export async function generateStaticParams() {
   try {
-    const drugs = await apiClient.searchDrugs("", { fetchAll: true });
-    return drugs.map((drug) => ({
-      drug_name: drug.name
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, ""),
+    const drugs = await apiClient.getSitemapDrugs();
+    const uniqueDrugs = Array.from(new Set(drugs.map((drug) => drug.name))).map(
+      (name) => drugs.find((drug) => drug.name === name)
+    );
+    return uniqueDrugs.map((drug) => ({
+      drug_name: drug!.name, // Preserve hyphenated name
     }));
   } catch (error) {
     console.error("Error generating static params:", error);
@@ -31,63 +32,73 @@ export async function generateStaticParams() {
   }
 }
 
-// Generate metadata for SEO
+interface DrugPageProps {
+  params: Promise<{ drug_name: string }>;
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ drug_name: string }>;
 }): Promise<Metadata> {
   const { drug_name } = await params;
-  const drugName = decodeURIComponent(drug_name.replace(/-/g, " "));
-  try {
-    const drug = await apiClient.getDrug(drugName);
-    if (!drug) {
-      return {
-        title: "Drug Not Found | Drugbit.info",
-        description: "The requested drug could not be found.",
-      };
-    }
+  if (drug_name.includes("%20")) {
+    const hyphenatedName = drug_name.replace(/%20/g, "-");
+    redirect(`/drug/${encodeURIComponent(hyphenatedName)}`);
+  }
+
+  // Check cache first
+  let drug: Drug | null = drugCache.get(drug_name) ?? null;
+  if (drug === null) {
+    console.log(`Cache miss for ${drug_name}, fetching from API`);
+    drug = await apiClient.getDrug(drug_name);
+    drugCache.set(drug_name, drug);
+  } else {
+    console.log(`Cache hit for ${drug_name}`);
+  }
+
+  if (!drug) {
     return {
-      title: `${drug.name} | Drugbit.info`,
-      description:
-        drug.overview.slice(0, 160) ||
-        `Detailed information about ${drug.name}`,
-      keywords: [
-        drug.name,
-        drug.trade_name || "",
-        drug.category,
-        "anesthesia",
-        "pharmacology",
-      ],
-      openGraph: {
-        title: `${drug.name} | Drugbit.info`,
-        description: drug.overview.slice(0, 160),
-        url: `https://www.drugbit.info/drug/${drug_name}`,
-        type: "website",
-      },
-    };
-  } catch (error) {
-    console.error("Error generating metadata:", error);
-    return {
-      title: "Error | Drugbit.info",
-      description: "An error occurred while fetching drug information.",
+      title: "Drug Not Found | Drugbit.info",
+      description: "The requested drug could not be found.",
     };
   }
-}
-
-interface DrugPageProps {
-  params: Promise<{ drug_name: string }>;
+  return {
+    title: `${drug.name} | Drugbit.info`,
+    description:
+      drug.overview.slice(0, 160) ||
+      `Detailed information about ${drug.name}`,
+    keywords: [
+      drug.name,
+      drug.trade_name || "",
+      drug.category,
+      "anesthesia",
+      "pharmacology",
+    ],
+    openGraph: {
+      title: `${drug.name} | Drugbit.info`,
+      description: drug.overview.slice(0, 160),
+      url: `https://www.drugbit.info/drug/${drug_name}`,
+      type: "website",
+    },
+  };
 }
 
 export default async function DrugPage({ params }: DrugPageProps) {
   const { drug_name } = await params;
-  const drugName = decodeURIComponent(drug_name.replace(/-/g, " "));
-  let drug: Drug | null = null;
+  if (drug_name.includes("%20")) {
+    const hyphenatedName = drug_name.replace(/%20/g, "-");
+    redirect(`/drug/${encodeURIComponent(hyphenatedName)}`);
+  }
 
-  try {
-    drug = await apiClient.getDrug(drugName);
-  } catch (error) {
-    console.error("Error fetching drug:", error);
+  // Check cache first
+  let drug: Drug | null = drugCache.get(drug_name) ?? null;
+  if (drug === null) {
+    console.log(`Cache miss for ${drug_name}, fetching from API`);
+    drug = await apiClient.getDrug(drug_name);
+    drugCache.set(drug_name, drug);
+  } else {
+    console.log(`Cache hit for ${drug_name}`);
   }
 
   if (!drug) {
