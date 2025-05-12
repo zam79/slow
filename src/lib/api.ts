@@ -42,7 +42,8 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://drug-6.onrender.com/";
 const SITEMAP_KEY = process.env.NEXT_PUBLIC_SITEMAP_KEY || "";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 const MAX_RETRIES = 3;
@@ -52,11 +53,6 @@ const PAGE_LIMIT = 100; // Matches backend limit
 const MAX_TOTAL_DRUGS = 1000; // Safety cap
 
 const cache: { [key: string]: CacheEntry } = {};
-
-console.log("API Client initialized with base URL:", API_BASE_URL);
-if (!SITEMAP_KEY) {
-  console.warn("SITEMAP_KEY not set in environment variables");
-}
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -88,23 +84,39 @@ export const apiClient = {
     options: { limit?: number; offset?: number; fetchAll?: boolean } = {}
   ): Promise<Drug[]> {
     const { limit = PAGE_LIMIT, offset = 0, fetchAll = false } = options;
-    const cacheKey = `search:${search}:limit:${limit}:offset:${offset}`;
+    const endpoint = search ? "/drugs/search" : "/drugs/";
+    const cacheKey = `${endpoint}:${search}:limit:${limit}:offset:${offset}`;
 
     const cached = cache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`Returning cached data for ${cacheKey}`);
-      return (cached.data as Drug[]) || [];
+      const cachedData = cached.data as Drug[];
+      if (!Array.isArray(cachedData)) {
+        console.error(
+          `Cached data for ${cacheKey} is not an array:`,
+          cachedData
+        );
+        return [];
+      }
+      return cachedData;
     }
 
-    if (fetchAll) {
+    if (fetchAll && !search) {
       const allDrugs: Drug[] = [];
       let currentOffset = 0;
 
       while (true) {
-        const pageCacheKey = `search:${search}:limit:${PAGE_LIMIT}:offset:${currentOffset}`;
+        const pageCacheKey = `/drugs/:limit:${PAGE_LIMIT}:offset:${currentOffset}`;
         const cached = cache[pageCacheKey];
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-          allDrugs.push(...((cached.data as Drug[]) || []));
+          const cachedData = cached.data as Drug[];
+          if (!Array.isArray(cachedData)) {
+            console.error(
+              `Cached data for ${pageCacheKey} is not an array:`,
+              cachedData
+            );
+            return allDrugs;
+          }
+          allDrugs.push(...cachedData);
           currentOffset += PAGE_LIMIT;
           continue;
         }
@@ -112,18 +124,19 @@ export const apiClient = {
         let retries = 0;
         while (retries < MAX_RETRIES) {
           try {
-            const url = `/drugs/?limit=${PAGE_LIMIT}&offset=${currentOffset}${
-              search ? `&search=${encodeURIComponent(search)}` : ""
-            }`;
-            console.log(`Fetching drugs from: ${API_BASE_URL}${url}`);
+            const url = `/drugs/?limit=${PAGE_LIMIT}&offset=${currentOffset}`;
             const response = await axiosInstance.get<DrugsResponse>(url);
             if (!response.data.success) {
               console.error(`Error: ${response.data.message}`);
-              return [];
+              return allDrugs;
             }
-            console.log(
-              `Fetched ${response.data.count} drugs from offset ${currentOffset}`
-            );
+            if (!Array.isArray(response.data.data)) {
+              console.error(
+                "Response data is not an array:",
+                response.data.data
+              );
+              return allDrugs;
+            }
             const frontendDrugs = response.data.data.map(toFrontendDrug);
             cache[pageCacheKey] = {
               data: frontendDrugs,
@@ -134,7 +147,6 @@ export const apiClient = {
               response.data.count < PAGE_LIMIT ||
               allDrugs.length >= MAX_TOTAL_DRUGS
             ) {
-              console.log(`Total drugs fetched: ${allDrugs.length}`);
               return allDrugs;
             }
             currentOffset += PAGE_LIMIT;
@@ -147,18 +159,13 @@ export const apiClient = {
             ) {
               if (retries < MAX_RETRIES - 1) {
                 const delay = RETRY_DELAY * Math.pow(2, retries);
-                console.warn(
-                  `Error (status: ${
-                    axiosError.response?.status || axiosError.code
-                  }), retrying in ${delay}ms...`
-                );
                 await new Promise((resolve) => setTimeout(resolve, delay));
                 retries++;
                 continue;
               }
             }
             console.error("API error in searchDrugs:", axiosError.message);
-            return [];
+            return allDrugs;
           }
         }
       }
@@ -167,16 +174,18 @@ export const apiClient = {
     let retries = 0;
     while (retries < MAX_RETRIES) {
       try {
-        const url = `/drugs/?limit=${limit}&offset=${offset}${
-          search ? `&search=${encodeURIComponent(search)}` : ""
-        }`;
-        console.log(`Fetching drugs from: ${API_BASE_URL}${url}`);
+        const url = search
+          ? `${endpoint}?search=${encodeURIComponent(search)}&limit=${limit}`
+          : `${endpoint}?limit=${limit}&offset=${offset}`;
         const response = await axiosInstance.get<DrugsResponse>(url);
         if (!response.data.success) {
           console.error(`Error: ${response.data.message}`);
           return [];
         }
-        console.log(`Fetched ${response.data.count} drugs`);
+        if (!Array.isArray(response.data.data)) {
+          console.error("Response data is not an array:", response.data.data);
+          return [];
+        }
         const frontendDrugs = response.data.data.map(toFrontendDrug);
         cache[cacheKey] = { data: frontendDrugs, timestamp: Date.now() };
         return frontendDrugs;
@@ -188,11 +197,6 @@ export const apiClient = {
         ) {
           if (retries < MAX_RETRIES - 1) {
             const delay = RETRY_DELAY * Math.pow(2, retries);
-            console.warn(
-              `Error (status: ${
-                axiosError.response?.status || axiosError.code
-              }), retrying in ${delay}ms...`
-            );
             await new Promise((resolve) => setTimeout(resolve, delay));
             retries++;
             continue;
@@ -209,21 +213,26 @@ export const apiClient = {
     const cacheKey = "sitemap";
     const cached = cache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`Returning cached data for ${cacheKey}`);
-      return (cached.data as Drug[]) || [];
+      const cachedData = cached.data as Drug[];
+      if (!Array.isArray(cachedData)) {
+        console.error(
+          `Cached data for ${cacheKey} is not an array:`,
+          cachedData
+        );
+        return [];
+      }
+      return cachedData;
     }
 
     let retries = 0;
     while (retries < MAX_RETRIES) {
       try {
         const url = "/drugs/sitemap";
-        console.log(`Fetching sitemap drugs from: ${API_BASE_URL}${url}`);
         const response = await axiosInstance.get<BackendDrug[]>(url, {
           headers: {
             "X-Sitemap-Key": SITEMAP_KEY,
           },
         });
-        console.log(`Fetched ${response.data.length} sitemap drugs`);
         const frontendDrugs = response.data.map(toFrontendDrug);
         cache[cacheKey] = { data: frontendDrugs, timestamp: Date.now() };
         return frontendDrugs;
@@ -236,11 +245,6 @@ export const apiClient = {
         ) {
           if (retries < MAX_RETRIES - 1) {
             const delay = RETRY_DELAY * Math.pow(2, retries);
-            console.warn(
-              `Error (status: ${
-                axiosError.response?.status || axiosError.code
-              }), retrying in ${delay}ms...`
-            );
             await new Promise((resolve) => setTimeout(resolve, delay));
             retries++;
             continue;
@@ -257,7 +261,6 @@ export const apiClient = {
     const cacheKey = `drug:${drugName}`;
     const cached = cache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`Returning cached data for ${cacheKey}`);
       return (cached.data as Drug | null) || null;
     }
 
@@ -265,17 +268,11 @@ export const apiClient = {
     while (retries < MAX_RETRIES) {
       try {
         const url = `/drugs/${encodeURIComponent(drugName)}`;
-        console.log(`Fetching drug from: ${API_BASE_URL}${url}`);
         const response = await axiosInstance.get<DrugResponse>(url);
         if (!response.data.success) {
           console.error(`Error: ${response.data.message}`);
           return null;
         }
-        console.log(
-          `Fetched drug: ${
-            response.data.data ? response.data.data.name : "Not found"
-          }`
-        );
         const frontendDrug = response.data.data
           ? toFrontendDrug(response.data.data)
           : null;
@@ -289,11 +286,6 @@ export const apiClient = {
         ) {
           if (retries < MAX_RETRIES - 1) {
             const delay = RETRY_DELAY * Math.pow(2, retries);
-            console.warn(
-              `Error (status: ${
-                axiosError.response?.status || axiosError.code
-              }), retrying in ${delay}ms...`
-            );
             await new Promise((resolve) => setTimeout(resolve, delay));
             retries++;
             continue;
@@ -310,23 +302,27 @@ export const apiClient = {
     const cacheKey = "categories";
     const cached = cache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`Returning cached data for ${cacheKey}`);
-      return (cached.data as string[]) || [];
+      const cachedData = cached.data as string[];
+      if (!Array.isArray(cachedData)) {
+        console.error(
+          `Cached data for ${cacheKey} is not an array:`,
+          cachedData
+        );
+        return [];
+      }
+      return cachedData;
     }
 
     let retries = 0;
     while (retries < MAX_RETRIES) {
       try {
         const url = "/drugs/categories";
-        console.log(`Fetching categories from: ${API_BASE_URL}${url}`);
         const response = await axiosInstance.get<CategoriesResponse>(url);
         if (!response.data.success) {
           console.error(`Error: ${response.data.message}`);
           return [];
         }
-        // Use raw category names without modification
         const categories = response.data.data;
-        console.log(`Fetched categories: ${categories.join(", ")}`);
         cache[cacheKey] = { data: categories, timestamp: Date.now() };
         return categories;
       } catch (error) {
@@ -337,11 +333,6 @@ export const apiClient = {
         ) {
           if (retries < MAX_RETRIES - 1) {
             const delay = RETRY_DELAY * Math.pow(2, retries);
-            console.warn(
-              `Error (status: ${
-                axiosError.response?.status || axiosError.code
-              }), retrying in ${delay}ms...`
-            );
             await new Promise((resolve) => setTimeout(resolve, delay));
             retries++;
             continue;
@@ -358,24 +349,30 @@ export const apiClient = {
     const cacheKey = `category:${category}`;
     const cached = cache[cacheKey];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`Returning cached data for ${cacheKey}`);
-      return (cached.data as Drug[]) || [];
+      const cachedData = cached.data as Drug[];
+      if (!Array.isArray(cachedData)) {
+        console.error(
+          `Cached data for ${cacheKey} is not an array:`,
+          cachedData
+        );
+        return [];
+      }
+      return cachedData;
     }
 
     let retries = 0;
     while (retries < MAX_RETRIES) {
       try {
-        // Use raw category name without modification
         const url = `/drugs/category/${encodeURIComponent(category)}`;
-        console.log(`Fetching drugs by category from: ${API_BASE_URL}${url}`);
         const response = await axiosInstance.get<DrugsResponse>(url);
         if (!response.data.success) {
           console.error(`Error: ${response.data.message}`);
           return [];
         }
-        console.log(
-          `Fetched ${response.data.count} drugs for category: ${category}`
-        );
+        if (!Array.isArray(response.data.data)) {
+          console.error("Response data is not an array:", response.data.data);
+          return [];
+        }
         const frontendDrugs = response.data.data.map(toFrontendDrug);
         cache[cacheKey] = { data: frontendDrugs, timestamp: Date.now() };
         return frontendDrugs;
@@ -387,11 +384,6 @@ export const apiClient = {
         ) {
           if (retries < MAX_RETRIES - 1) {
             const delay = RETRY_DELAY * Math.pow(2, retries);
-            console.warn(
-              `Error (status: ${
-                axiosError.response?.status || axiosError.code
-              }), retrying in ${delay}ms...`
-            );
             await new Promise((resolve) => setTimeout(resolve, delay));
             retries++;
             continue;
@@ -406,6 +398,5 @@ export const apiClient = {
 
   clearCache: () => {
     Object.keys(cache).forEach((key) => delete cache[key]);
-    console.log("API cache cleared");
   },
 };
