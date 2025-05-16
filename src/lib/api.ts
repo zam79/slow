@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { Drug } from "./types";
 
-// Backend response interfaces (include last_updated)
+// Backend response interfaces
 interface BackendDrug {
   id: number;
   name: string;
@@ -37,8 +37,28 @@ interface CategoriesResponse {
   message?: string | null;
 }
 
+interface DrugsByCategoryResponse {
+  success: boolean;
+  data: { [key: string]: BackendDrug[] };
+  count: number;
+  total: number;
+  message?: string | null;
+}
+
+interface SitemapLightDrug {
+  id: number;
+  name: string;
+  url: string;
+}
+
 interface CacheEntry {
-  data: Drug | Drug[] | string[] | null;
+  data:
+    | Drug
+    | Drug[]
+    | string[]
+    | { [key: string]: Drug[] }
+    | SitemapLightDrug[]
+    | null;
   timestamp: number;
 }
 
@@ -62,7 +82,7 @@ const axiosInstance = axios.create({
   },
 });
 
-// Convert BackendDrug to Drug (remove last_updated)
+// Convert BackendDrug to Drug
 const toFrontendDrug = (backendDrug: BackendDrug): Drug => ({
   id: backendDrug.id,
   name: backendDrug.name,
@@ -257,6 +277,55 @@ export const apiClient = {
     return [];
   },
 
+  async getSitemapLight(): Promise<SitemapLightDrug[]> {
+    const cacheKey = "sitemap-light";
+    const cached = cache[cacheKey];
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      const cachedData = cached.data as SitemapLightDrug[];
+      if (!Array.isArray(cachedData)) {
+        console.error(
+          `Cached data for ${cacheKey} is not an array:`,
+          cachedData
+        );
+        return [];
+      }
+      return cachedData;
+    }
+
+    let retries = 0;
+    while (retries < MAX_RETRIES) {
+      try {
+        const response = await axiosInstance.get<SitemapLightDrug[]>(
+          "/drugs/sitemap-light",
+          {
+            headers: {
+              "X-Sitemap-Key": SITEMAP_KEY,
+            },
+          }
+        );
+        cache[cacheKey] = { data: response.data, timestamp: Date.now() };
+        return response.data;
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        if (
+          axiosError.response?.status === 429 ||
+          axiosError.response?.status === 401 ||
+          axiosError.code === "ECONNABORTED"
+        ) {
+          if (retries < MAX_RETRIES - 1) {
+            const delay = RETRY_DELAY * Math.pow(2, retries);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            retries++;
+            continue;
+          }
+        }
+        console.error("API error in getSitemapLight:", axiosError.message);
+        return [];
+      }
+    }
+    return [];
+  },
+
   async getDrug(drugName: string): Promise<Drug | null> {
     const cacheKey = `drug:${drugName}`;
     const cached = cache[cacheKey];
@@ -394,6 +463,54 @@ export const apiClient = {
       }
     }
     return [];
+  },
+
+  async getAllDrugsByCategories(): Promise<{ [key: string]: Drug[] }> {
+    const cacheKey = "drugsByCategories";
+    const cached = cache[cacheKey];
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.data as { [key: string]: Drug[] };
+    }
+
+    let retries = 0;
+    while (retries < MAX_RETRIES) {
+      try {
+        const response = await axiosInstance.get<DrugsByCategoryResponse>(
+          "/drugs/by-categories"
+        );
+        if (!response.data.success) {
+          console.error(`Error: ${response.data.message}`);
+          return {};
+        }
+        const frontendDrugs = Object.fromEntries(
+          Object.entries(response.data.data).map(([category, drugs]) => [
+            category,
+            drugs.map(toFrontendDrug),
+          ])
+        );
+        cache[cacheKey] = { data: frontendDrugs, timestamp: Date.now() };
+        return frontendDrugs;
+      } catch (error) {
+        const axiosError = error as AxiosError;
+        if (
+          axiosError.response?.status === 429 ||
+          axiosError.code === "ECONNABORTED"
+        ) {
+          if (retries < MAX_RETRIES - 1) {
+            const delay = RETRY_DELAY * Math.pow(2, retries);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            retries++;
+            continue;
+          }
+        }
+        console.error(
+          "API error in getAllDrugsByCategories:",
+          axiosError.message
+        );
+        return {};
+      }
+    }
+    return {};
   },
 
   clearCache: () => {

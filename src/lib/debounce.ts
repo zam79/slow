@@ -1,27 +1,25 @@
-export function debounce<Args extends [string]>(
-  func: (...args: Args) => void,
+export function debounce<T extends (...args: string[]) => void>(
+  func: T,
   wait: number
-): ((...args: Args) => void) & { cancel: () => void } {
+): { (...args: Parameters<T>): void; cancel: () => void } {
   let timeout: NodeJS.Timeout | null = null;
 
-  const debounced = (...args: Args): void => {
-    const later = () => {
-      timeout = null;
+  const debounced = (...args: Parameters<T>) => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => {
       func(...args);
-    };
-
-    if (timeout !== null) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(later, wait);
+      timeout = null;
+    }, wait);
   };
 
-  debounced.cancel = (): void => {
-    if (timeout !== null) {
+  debounced.cancel = () => {
+    if (timeout) {
       clearTimeout(timeout);
       timeout = null;
     }
   };
 
-  return debounced;
+  return debounced as { (...args: Parameters<T>): void; cancel: () => void };
 }

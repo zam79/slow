@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import CookiesConsent from "./components/CookiesConsent";
-import AnalyticsTracker from "./components/AnalyticsTracker";
+import CookiesConsent from "./components/layout/CookiesConsent";
 
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  weight: ["300", "400", "500", "700"],
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -57,20 +50,14 @@ export default function RootLayout({
       <head>
         <link
           rel="dns-prefetch"
-          href={process.env.NEXT_PUBLIC_API_URL || "https://data.drugbit.info"}
+          href={
+            process.env.NEXT_PUBLIC_API_URL || "https://drug-6.onrender.com"
+          }
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {/* Render children */}
+      <body className={inter.variable}>
         {children}
-
-        {/* Cookies consent banner */}
         <CookiesConsent />
-
-        {/* Google Analytics */}
-        {process.env.NEXT_PUBLIC_GA_ID && (
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
-        )}
       </body>
     </html>
   );

@@ -12,7 +12,6 @@ import { Drug } from "@/lib/types";
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 const MIN_SEARCH_CHARS = 2; // Minimum characters before searching
 const MAX_SUGGESTIONS = 10; // Max suggestions to show
-const DEFAULT_SEARCH_LIMIT = 50; // Default results per page
 const DEBOUNCE_DELAY = 300; // Debounce delay in ms
 
 // Type for cached suggestions
@@ -33,12 +32,20 @@ const SearchBar = memo(function SearchBar() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [cache, setCache] = useState<SuggestionCache>({});
+  const [isMounted, setIsMounted] = useState(false); // Track client mount
 
   // Hooks and refs
   const router = useRouter();
   const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
   const containerRef = useRef<HTMLDivElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Set isMounted after component mounts on client
+  useEffect(() => {
+    setIsMounted(true);
+    console.log("SearchBar mounted", { styles: Object.keys(styles) });
+    return () => console.log("SearchBar unmounted");
+  }, []);
 
   /**
    * Clears all search state
@@ -78,23 +85,27 @@ const SearchBar = memo(function SearchBar() {
 
       try {
         setIsLoading(true);
-        const results = await apiClient.searchDrugs(search, {
-          limit: MAX_SUGGESTIONS,
-        });
+        const results = await apiClient.searchDrugs(search);
+        console.log("Suggestions fetched:", results); // Debug
+        const limitedResults = results.slice(0, MAX_SUGGESTIONS);
 
-        // Update cache and state
         setCache((prev) => ({
           ...prev,
           [cacheKey]: {
-            data: results,
+            data: limitedResults,
             timestamp: Date.now(),
           },
         }));
 
-        setSuggestions(results);
-        setMessage(results.length === 0 ? "No suggestions found." : null);
+        setSuggestions(limitedResults);
+        setMessage(
+          limitedResults.length === 0 ? "No suggestions found." : null
+        );
       } catch (error) {
-        console.error("Error fetching suggestions:", error);
+        console.error("API Error in suggestions:", error, {
+          query: search,
+          url: process.env.NEXT_PUBLIC_API_URL,
+        });
         setSuggestions([]);
         setMessage(
           error instanceof Error
@@ -116,10 +127,8 @@ const SearchBar = memo(function SearchBar() {
       setIsLoading(true);
       setMessage(null);
 
-      const results = await apiClient.searchDrugs(search, {
-        limit: DEFAULT_SEARCH_LIMIT,
-      });
-
+      const results = await apiClient.searchDrugs(search);
+      console.log("Full search results fetched:", results); // Debug
       const sortedResults = [...results].sort((a, b) =>
         a.name.localeCompare(b.name)
       );
@@ -131,7 +140,10 @@ const SearchBar = memo(function SearchBar() {
           : null
       );
     } catch (error) {
-      console.error("Error fetching search results:", error);
+      console.error("API Error in full search:", error, {
+        query: search,
+        url: process.env.NEXT_PUBLIC_API_URL,
+      });
       setSearchResults([]);
       setMessage(
         error instanceof Error
@@ -156,13 +168,13 @@ const SearchBar = memo(function SearchBar() {
 
   // Handle query changes
   useEffect(() => {
-    if (query.trim()) {
+    if (query.trim() && isMounted) {
       setIsLoading(true);
       debouncedFetchRef.current?.(query);
     } else {
       clearSearch();
     }
-  }, [query, clearSearch]);
+  }, [query, clearSearch, isMounted]);
 
   // Handle click outside
   useEffect(() => {
@@ -218,6 +230,37 @@ const SearchBar = memo(function SearchBar() {
     [router, clearSearch]
   );
 
+  // Render minimal UI until mounted to avoid hydration mismatch
+  if (!isMounted) {
+    return (
+      <div className={styles.searchContainer}>
+        <form role="search">
+          <div className={styles.inputWrapper}>
+            <div className={styles.searchIconWrapper}>
+              <FaSearch className={styles.searchIcon} aria-hidden="true" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search drugs..."
+              className={styles.searchInput}
+              aria-label="Search drugs"
+              disabled
+            />
+            <button
+              type="submit"
+              disabled
+              className={styles.searchButton}
+              aria-label="Search"
+            >
+              <span>Search</span>
+              <FaArrowRight aria-hidden="true" />
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.searchContainer} ref={containerRef}>
       <form onSubmit={handleSearch} role="search">
@@ -238,7 +281,6 @@ const SearchBar = memo(function SearchBar() {
             placeholder="Search drugs..."
             className={styles.searchInput}
             aria-label="Search drugs"
-            aria-expanded={isFocused && suggestions.length > 0}
             aria-controls="search-suggestions"
             aria-autocomplete="list"
           />
@@ -265,7 +307,7 @@ const SearchBar = memo(function SearchBar() {
           >
             {isLoading ? (
               <>
-                <span className={styles.spinner} aria-hidden="true"></span>
+                <span className={styles.spinnerDots} aria-hidden="true"></span>
                 <FaArrowRight aria-hidden="true" />
               </>
             ) : (
@@ -278,14 +320,12 @@ const SearchBar = memo(function SearchBar() {
         </div>
       </form>
 
-      {/* Status messages */}
       {message && (
         <div className={`${styles.message} ${styles.error}`} role="status">
           {message}
         </div>
       )}
 
-      {/* Suggestions dropdown */}
       {isFocused && suggestions.length > 0 && !searchResults.length && (
         <div
           id="search-suggestions"
@@ -322,7 +362,6 @@ const SearchBar = memo(function SearchBar() {
         </div>
       )}
 
-      {/* Full search results */}
       {searchResults.length > 0 && (
         <div
           className={styles.resultsContainer}

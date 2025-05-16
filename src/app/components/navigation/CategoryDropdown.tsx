@@ -1,4 +1,3 @@
-// src/components/CategoryDropdown.tsx
 "use client";
 
 import { useState, useEffect, useRef, useCallback, memo } from "react";
@@ -29,6 +28,7 @@ function CategoryDropdownComponent({
   const categoryRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   const drugRefs = useRef<{ [key: string]: HTMLLIElement | null }>({});
   const router = useRouter();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -40,6 +40,18 @@ function CategoryDropdownComponent({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const debounceNavigation = useCallback(
+    (slug: string) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
+        router.push(`/drug/${encodeURIComponent(slug)}`);
+      }, 300);
+    },
+    [router]
+  );
 
   const toggleCategoryMenu = useCallback(() => {
     setIsCategoryMenuOpen((prev) => !prev);
@@ -73,9 +85,9 @@ function CategoryDropdownComponent({
         .toLowerCase()
         .replace(/\s+/g, "-")
         .replace(/[^a-z0-9-]/g, "");
-      router.push(`/drug/${encodeURIComponent(slug)}`);
+      debounceNavigation(slug);
     },
-    [router]
+    [debounceNavigation]
   );
 
   const handleCategoryKeyDown = useCallback(

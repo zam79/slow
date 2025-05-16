@@ -5,10 +5,9 @@ import styles from "./search.module.css";
 import { Suspense } from "react";
 
 const SearchBar = dynamic(
-  () =>
-    import("./SearchBar").catch(() => ({
-      default: () => <div>Failed to load search component</div>,
-    })),
+  () => import("./SearchBar").catch(() => ({
+    default: () => <div>Failed to load search component</div>,
+  })),
   {
     ssr: false,
     loading: () => (
