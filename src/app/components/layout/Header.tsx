@@ -1,6 +1,5 @@
 import Link from "next/link";
 import styles from "../../page.module.css";
-import navStyles from "@/app/components/navigation/nav.module.css";
 
 export default function Header({ showNav = true }: { showNav?: boolean }) {
   return (
@@ -10,16 +9,13 @@ export default function Header({ showNav = true }: { showNav?: boolean }) {
           <span className={styles.logo}>Drugbit.info</span>
           <span className={styles.subtitle}>Anesthesia & ICU Essentials</span>
         </div>
+
         {showNav && (
-          <nav
-            className={navStyles.nav}
-            aria-label="Drug categories navigation"
-          >
-            <div className={navStyles.categoryWrapper}>
-              <Link href="/" className={navStyles.mainButton}>
-                Back to Home
-              </Link>
-            </div>
+          <nav aria-label="Main navigation">
+            <Link href="/" className={styles.navLink}>
+              Home
+            </Link>
+            {/* Add more links if needed, e.g., <Link href="/about">About</Link> */}
           </nav>
         )}
       </div>

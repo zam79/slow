@@ -11,6 +11,7 @@ const DrugInfo = dynamic(() => import("../../components/drug/DrugInfo"), {
   ssr: false,
   loading: () => <div>Loading drug details...</div>,
 });
+
 // Module-scoped cache
 const drugCache = new Map<string, Drug | null>();
 
@@ -66,7 +67,6 @@ export async function generateMetadata({
     keywords: [
       drug.name,
       drug.trade_name || "",
-      drug.category,
       "anesthesia",
       "pharmacology",
     ].filter(Boolean),

@@ -7,14 +7,9 @@ import { Drug } from "@/lib/types";
 interface DrugListProps {
   drugs: Drug[];
   onDrugSelect: (drug: Drug) => void;
-  category: string;
 }
 
-export default function DrugList({
-  drugs,
-  onDrugSelect,
-  category,
-}: DrugListProps) {
+export default function DrugList({ drugs, onDrugSelect }: DrugListProps) {
   const listRef = useRef<HTMLUListElement>(null);
 
   // Auto-focus the first item when the list opens
@@ -27,11 +22,11 @@ export default function DrugList({
 
   return (
     <ul
-      id={`drugs-${category}`}
+      id="drug-list"
       className={styles.drugList}
       ref={listRef}
       role="menu"
-      aria-label={`${category} drugs`}
+      aria-label="Drug list"
     >
       {drugs.length > 0 ? (
         drugs.map((drug) => (

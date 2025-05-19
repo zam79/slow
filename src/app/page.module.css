@@ -199,3 +199,25 @@
     font-size: 0.75rem;
   }
 }
+.navLink {
+  background: linear-gradient(90deg, #1e40af 0%, #fb923c 100%);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.navLink:hover {
+  background: linear-gradient(90deg, #1d4ed8 0%, #f59e0b 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.navLink:focus {
+  outline: none;
+  border: 2px solid #2dd4bf;
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.3);
+}

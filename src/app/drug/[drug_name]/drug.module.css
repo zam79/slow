@@ -114,3 +114,15 @@
     font-size: 1.25rem;
   }
 }
+.backLink {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}

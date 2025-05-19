@@ -6,7 +6,6 @@ interface BackendDrug {
   id: number;
   name: string;
   trade_name?: string | null;
-  category: string;
   overview: string;
   dosing: string;
   pharmacokinetics: string;
@@ -31,20 +30,6 @@ interface DrugsResponse {
   message?: string | null;
 }
 
-interface CategoriesResponse {
-  success: boolean;
-  data: string[];
-  message?: string | null;
-}
-
-interface DrugsByCategoryResponse {
-  success: boolean;
-  data: { [key: string]: BackendDrug[] };
-  count: number;
-  total: number;
-  message?: string | null;
-}
-
 interface SitemapLightDrug {
   id: number;
   name: string;
@@ -52,13 +37,7 @@ interface SitemapLightDrug {
 }
 
 interface CacheEntry {
-  data:
-    | Drug
-    | Drug[]
-    | string[]
-    | { [key: string]: Drug[] }
-    | SitemapLightDrug[]
-    | null;
+  data: Drug | Drug[] | SitemapLightDrug[] | null;
   timestamp: number;
 }
 
@@ -87,7 +66,6 @@ const toFrontendDrug = (backendDrug: BackendDrug): Drug => ({
   id: backendDrug.id,
   name: backendDrug.name,
   trade_name: backendDrug.trade_name || undefined,
-  category: backendDrug.category,
   overview: backendDrug.overview,
   dosing: backendDrug.dosing,
   pharmacokinetics: backendDrug.pharmacokinetics,
@@ -365,152 +343,6 @@ export const apiClient = {
       }
     }
     return null;
-  },
-
-  async getCategories(): Promise<string[]> {
-    const cacheKey = "categories";
-    const cached = cache[cacheKey];
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      const cachedData = cached.data as string[];
-      if (!Array.isArray(cachedData)) {
-        console.error(
-          `Cached data for ${cacheKey} is not an array:`,
-          cachedData
-        );
-        return [];
-      }
-      return cachedData;
-    }
-
-    let retries = 0;
-    while (retries < MAX_RETRIES) {
-      try {
-        const url = "/drugs/categories";
-        const response = await axiosInstance.get<CategoriesResponse>(url);
-        if (!response.data.success) {
-          console.error(`Error: ${response.data.message}`);
-          return [];
-        }
-        const categories = response.data.data;
-        cache[cacheKey] = { data: categories, timestamp: Date.now() };
-        return categories;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        if (
-          axiosError.response?.status === 429 ||
-          axiosError.code === "ECONNABORTED"
-        ) {
-          if (retries < MAX_RETRIES - 1) {
-            const delay = RETRY_DELAY * Math.pow(2, retries);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            retries++;
-            continue;
-          }
-        }
-        console.error("API error in getCategories:", axiosError.message);
-        return [];
-      }
-    }
-    return [];
-  },
-
-  async getDrugsByCategory(category: string): Promise<Drug[]> {
-    const cacheKey = `category:${category}`;
-    const cached = cache[cacheKey];
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      const cachedData = cached.data as Drug[];
-      if (!Array.isArray(cachedData)) {
-        console.error(
-          `Cached data for ${cacheKey} is not an array:`,
-          cachedData
-        );
-        return [];
-      }
-      return cachedData;
-    }
-
-    let retries = 0;
-    while (retries < MAX_RETRIES) {
-      try {
-        const url = `/drugs/category/${encodeURIComponent(category)}`;
-        const response = await axiosInstance.get<DrugsResponse>(url);
-        if (!response.data.success) {
-          console.error(`Error: ${response.data.message}`);
-          return [];
-        }
-        if (!Array.isArray(response.data.data)) {
-          console.error("Response data is not an array:", response.data.data);
-          return [];
-        }
-        const frontendDrugs = response.data.data.map(toFrontendDrug);
-        cache[cacheKey] = { data: frontendDrugs, timestamp: Date.now() };
-        return frontendDrugs;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        if (
-          axiosError.response?.status === 429 ||
-          axiosError.code === "ECONNABORTED"
-        ) {
-          if (retries < MAX_RETRIES - 1) {
-            const delay = RETRY_DELAY * Math.pow(2, retries);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            retries++;
-            continue;
-          }
-        }
-        console.error("API error in getDrugsByCategory:", axiosError.message);
-        return [];
-      }
-    }
-    return [];
-  },
-
-  async getAllDrugsByCategories(): Promise<{ [key: string]: Drug[] }> {
-    const cacheKey = "drugsByCategories";
-    const cached = cache[cacheKey];
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return cached.data as { [key: string]: Drug[] };
-    }
-
-    let retries = 0;
-    while (retries < MAX_RETRIES) {
-      try {
-        const response = await axiosInstance.get<DrugsByCategoryResponse>(
-          "/drugs/by-categories"
-        );
-        if (!response.data.success) {
-          console.error(`Error: ${response.data.message}`);
-          return {};
-        }
-        const frontendDrugs = Object.fromEntries(
-          Object.entries(response.data.data).map(([category, drugs]) => [
-            category,
-            drugs.map(toFrontendDrug),
-          ])
-        );
-        cache[cacheKey] = { data: frontendDrugs, timestamp: Date.now() };
-        return frontendDrugs;
-      } catch (error) {
-        const axiosError = error as AxiosError;
-        if (
-          axiosError.response?.status === 429 ||
-          axiosError.code === "ECONNABORTED"
-        ) {
-          if (retries < MAX_RETRIES - 1) {
-            const delay = RETRY_DELAY * Math.pow(2, retries);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            retries++;
-            continue;
-          }
-        }
-        console.error(
-          "API error in getAllDrugsByCategories:",
-          axiosError.message
-        );
-        return {};
-      }
-    }
-    return {};
   },
 
   clearCache: () => {

@@ -1,9 +1,7 @@
-// src/lib/types.ts
 export interface Drug {
   id: number;
   name: string;
-  trade_name?: string; // Use trade_name, remove tradeName
-  category: string;
+  trade_name?: string;
   overview: string;
   dosing: string;
   pharmacokinetics: string;
