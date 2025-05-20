@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, memo, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { FaSearch, FaTimes, FaArrowRight } from "react-icons/fa";
 import styles from "./search.module.css";
 import { debounce } from "@/lib/debounce";
@@ -23,7 +22,11 @@ type SuggestionCache = Record<
   }
 >;
 
-const SearchBar = memo(function SearchBar() {
+interface SearchBarProps {
+  onDrugSelect: (drug: Drug) => void; // New prop to handle drug selection
+}
+
+const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
   // State management
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Drug[]>([]);
@@ -32,10 +35,9 @@ const SearchBar = memo(function SearchBar() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [cache, setCache] = useState<SuggestionCache>({});
-  const [isMounted, setIsMounted] = useState(false); // Track client mount
+  const [isMounted, setIsMounted] = useState(false);
 
   // Hooks and refs
-  const router = useRouter();
   const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
   const containerRef = useRef<HTMLDivElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -86,7 +88,7 @@ const SearchBar = memo(function SearchBar() {
       try {
         setIsLoading(true);
         const results = await apiClient.searchDrugs(search);
-        console.log("Suggestions fetched:", results); // Debug
+        console.log("Suggestions fetched:", results);
         const limitedResults = results.slice(0, MAX_SUGGESTIONS);
 
         setCache((prev) => ({
@@ -128,7 +130,7 @@ const SearchBar = memo(function SearchBar() {
       setMessage(null);
 
       const results = await apiClient.searchDrugs(search);
-      console.log("Full search results fetched:", results); // Debug
+      console.log("Full search results fetched:", results);
       const sortedResults = [...results].sort((a, b) =>
         a.name.localeCompare(b.name)
       );
@@ -224,10 +226,11 @@ const SearchBar = memo(function SearchBar() {
    */
   const handleSuggestionClick = useCallback(
     (drug: Drug) => {
-      router.push(`/drug/${encodeURIComponent(drug.name)}`);
-      clearSearch();
+      onDrugSelect(drug); // Pass selected drug to parent
+      clearSearch(); // Clear search input and suggestions
+      setIsFocused(false); // Hide suggestions
     },
-    [router, clearSearch]
+    [onDrugSelect, clearSearch]
   );
 
   // Render minimal UI until mounted to avoid hydration mismatch
@@ -379,7 +382,7 @@ const SearchBar = memo(function SearchBar() {
               <li
                 key={`result-${drug.id}`}
                 className={styles.resultItem}
-                onClick={() => handleSuggestionClick(drug)}
+                onClick={() => handleSuggestionClick(drug)} // Use same handler for consistency
                 role="option"
                 aria-selected="false"
               >

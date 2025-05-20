@@ -1,8 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import styles from "./search.module.css";
 import { Suspense } from "react";
+import styles from "./search.module.css";
+import { Drug } from "@/lib/types";
 
 const SearchBar = dynamic(
   () => import("./SearchBar").catch(() => ({
@@ -16,11 +17,15 @@ const SearchBar = dynamic(
   }
 );
 
-export default function ClientSearch() {
+interface ClientSearchProps {
+  onDrugSelect: (drug: Drug) => void;
+}
+
+export default function ClientSearch({ onDrugSelect }: ClientSearchProps) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <div className={styles.searchWrapper}>
-        <SearchBar />
+        <SearchBar onDrugSelect={onDrugSelect} />
       </div>
     </Suspense>
   );
