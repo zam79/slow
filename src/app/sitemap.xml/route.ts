@@ -28,7 +28,7 @@ export async function GET() {
   <url>
     <loc>${baseUrl}/privacy</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
-    <chang>monthly</changefreq>
+    <changefreq>monthly</changefreq> <!-- Fixed typo: chang -> changefreq -->
     <priority>0.8</priority>
   </url>
   ${drugs
@@ -36,11 +36,11 @@ export async function GET() {
       (drug) => `
   <url>
     <loc>${baseUrl}/drug/${encodeURIComponent(
-        drug.name
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^a-z0-9-]/g, "")
-      )}</loc>
+      drug.name
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "")
+    )}</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -58,6 +58,42 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error generating sitemap:", error);
-    return new Response("Error generating sitemap", { status: 500 });
+    const baseUrl = "https://www.drugbit.info";
+    // Return a fallback sitemap with static pages
+    const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/about</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/contact</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/privacy</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>`;
+
+    return new Response(fallbackSitemap, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/xml",
+        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+      },
+    });
   }
 }

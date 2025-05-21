@@ -49,7 +49,7 @@ export async function generateMetadata({
 
   let drug = drugCache.get(decodedName);
   if (!drug) {
-    drug = await apiClient.getDrug(decodedName);
+    drug = await apiClient.getDrugByName(decodedName); // Updated to getDrugByName
     drugCache.set(decodedName, drug);
   }
 
@@ -92,7 +92,7 @@ export default async function DrugPage({ params }: DrugPageProps) {
 
   let drug = drugCache.get(decodedName);
   if (!drug) {
-    drug = await apiClient.getDrug(decodedName);
+    drug = await apiClient.getDrugByName(decodedName); // Updated to getDrugByName
     drugCache.set(decodedName, drug);
   }
 

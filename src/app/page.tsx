@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useCallback } from "react";
 import styles from "./page.module.css";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
@@ -10,10 +10,12 @@ import { Drug } from "@/lib/types";
 
 export default function Home() {
   const [selectedDrug, setSelectedDrug] = useState<Drug | null>(null);
+  const [resetTrigger, setResetTrigger] = useState(0);
 
-  const handleDrugSelect = (drug: Drug | null) => {
+  const handleDrugSelect = useCallback((drug: Drug | null) => {
     setSelectedDrug(drug);
-  };
+    setResetTrigger((prev) => prev + 1); // Increment for reset
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -22,12 +24,15 @@ export default function Home() {
         <section className={styles.heroSection}>
           <h1 className={styles.heroTitle}>Drugs in Anesthesia and Critical Care</h1>
           <Suspense fallback={<div className={styles.loading}>Loading search...</div>}>
-            <ClientSearch onDrugSelect={handleDrugSelect} />
+            <ClientSearch
+              onDrugSelect={handleDrugSelect}
+              resetTrigger={resetTrigger}
+            />
           </Suspense>
         </section>
         <section className={styles.drugInfoSection}>
           <Suspense fallback={<div className={styles.loading}>Loading drug info...</div>}>
-            <SearchWrapper onDrugSelect={handleDrugSelect} selectedDrug={selectedDrug} />
+            <SearchWrapper selectedDrug={selectedDrug} />
           </Suspense>
         </section>
       </main>

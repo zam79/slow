@@ -8,10 +8,11 @@ import { apiClient } from "@/lib/api";
 import { Drug } from "@/lib/types";
 
 // Configuration constants
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes cache
 const MIN_SEARCH_CHARS = 2; // Minimum characters before searching
 const MAX_SUGGESTIONS = 10; // Max suggestions to show
 const DEBOUNCE_DELAY = 300; // Debounce delay in ms
+const API_TIMEOUT = 5000; // 5-second API timeout
 
 // Type for cached suggestions
 type SuggestionCache = Record<
@@ -23,10 +24,14 @@ type SuggestionCache = Record<
 >;
 
 interface SearchBarProps {
-  onDrugSelect: (drug: Drug) => void; // New prop to handle drug selection
+  onDrugSelect: (drug: Drug) => void;
+  resetTrigger: number;
 }
 
-const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
+const SearchBar = memo(function SearchBar({
+  onDrugSelect,
+  resetTrigger,
+}: SearchBarProps) {
   // State management
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Drug[]>([]);
@@ -35,34 +40,49 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [cache, setCache] = useState<SuggestionCache>({});
-  const [isMounted, setIsMounted] = useState(false);
 
   // Hooks and refs
   const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
   const containerRef = useRef<HTMLDivElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Set isMounted after component mounts on client
-  useEffect(() => {
-    setIsMounted(true);
-    console.log("SearchBar mounted", { styles: Object.keys(styles) });
-    return () => console.log("SearchBar unmounted");
+  // Attempt to focus input
+  const attemptFocus = useCallback(() => {
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        setIsFocused(true);
+      }
+    }, 100);
   }, []);
 
-  /**
-   * Clears all search state
-   */
-  const clearSearch = useCallback(() => {
+  // Handle mount/unmount
+  useEffect(() => {
+    attemptFocus();
+    return () => {
+      debouncedFetchRef.current?.cancel();
+    };
+  }, [attemptFocus]);
+
+  // Reset search bar when resetTrigger changes
+  useEffect(() => {
     setQuery("");
     setSuggestions([]);
     setSearchResults([]);
     setIsLoading(false);
     setMessage(null);
-  }, []);
+    attemptFocus();
+  }, [resetTrigger, attemptFocus]);
 
-  /**
-   * Fetches search suggestions with caching
-   */
+  // Maintain focus during typing
+  useEffect(() => {
+    if (query.trim() && !isFocused) {
+      attemptFocus();
+    }
+  }, [query, isFocused, attemptFocus]);
+
+  // Fetches search suggestions with caching and timeout
   const fetchSuggestions = useCallback(
     async (search: string) => {
       if (search.length < MIN_SEARCH_CHARS) {
@@ -73,11 +93,10 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
       }
 
       const cacheKey = `suggestions:${search.toLowerCase()}`;
-
-      // Check cache first
       if (
         cache[cacheKey] &&
-        Date.now() - cache[cacheKey].timestamp < CACHE_DURATION
+        Date.now() - cache[cacheKey].timestamp < CACHE_DURATION &&
+        cache[cacheKey].data.length > 0
       ) {
         setSuggestions(cache[cacheKey].data);
         setIsLoading(false);
@@ -87,32 +106,37 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
 
       try {
         setIsLoading(true);
-        const results = await apiClient.searchDrugs(search);
-        console.log("Suggestions fetched:", results);
-        const limitedResults = results.slice(0, MAX_SUGGESTIONS);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+          setMessage("Search timed out. Please try again.");
+        }, API_TIMEOUT);
+
+        const results = await apiClient.searchDrugs(search, { limit: 100, signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        const validResults = results;
 
         setCache((prev) => ({
           ...prev,
           [cacheKey]: {
-            data: limitedResults,
+            data: validResults.slice(0, MAX_SUGGESTIONS),
             timestamp: Date.now(),
           },
         }));
 
-        setSuggestions(limitedResults);
+        setSuggestions(validResults.slice(0, MAX_SUGGESTIONS));
         setMessage(
-          limitedResults.length === 0 ? "No suggestions found." : null
+          validResults.length === 0 ? "No suggestions found." : null
         );
-      } catch (error) {
-        console.error("API Error in suggestions:", error, {
-          query: search,
-          url: process.env.NEXT_PUBLIC_API_URL,
-        });
+      } catch (error: unknown) {
         setSuggestions([]);
         setMessage(
-          error instanceof Error
-            ? `Error: ${error.message}`
-            : "Failed to fetch suggestions. Please try again."
+          error instanceof Error && error.name === "AbortError"
+            ? "Search timed out. Please try again."
+            : error instanceof Error
+              ? error.message
+              : "Failed to fetch suggestions. Please try again."
         );
       } finally {
         setIsLoading(false);
@@ -121,48 +145,11 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
     [cache]
   );
 
-  /**
-   * Fetches complete search results
-   */
-  const fetchFullSearchResults = useCallback(async (search: string) => {
-    try {
-      setIsLoading(true);
-      setMessage(null);
-
-      const results = await apiClient.searchDrugs(search);
-      console.log("Full search results fetched:", results);
-      const sortedResults = [...results].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
-
-      setSearchResults(sortedResults);
-      setMessage(
-        sortedResults.length === 0
-          ? "No results found. Please refine your search."
-          : null
-      );
-    } catch (error) {
-      console.error("API Error in full search:", error, {
-        query: search,
-        url: process.env.NEXT_PUBLIC_API_URL,
-      });
-      setSearchResults([]);
-      setMessage(
-        error instanceof Error
-          ? `Error: ${error.message}`
-          : "Failed to fetch results. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   // Setup debounce effect
   useEffect(() => {
     debouncedFetchRef.current = debounce((search: string) => {
       fetchSuggestions(search);
     }, DEBOUNCE_DELAY);
-
     return () => {
       debouncedFetchRef.current?.cancel();
     };
@@ -170,13 +157,16 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
 
   // Handle query changes
   useEffect(() => {
-    if (query.trim() && isMounted) {
+    if (query.trim()) {
       setIsLoading(true);
       debouncedFetchRef.current?.(query);
     } else {
-      clearSearch();
+      setSuggestions([]);
+      setSearchResults([]);
+      setIsLoading(false);
+      setMessage(null);
     }
-  }, [query, clearSearch, isMounted]);
+  }, [query]);
 
   // Handle click outside
   useEffect(() => {
@@ -187,7 +177,7 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
         suggestionsRef.current &&
         !suggestionsRef.current.contains(event.target as Node)
       ) {
-        setIsFocused(false);
+        setSuggestions([]);
       }
     };
 
@@ -197,12 +187,47 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
     };
   }, []);
 
-  /**
-   * Handles search form submission
-   */
+  // Fetches complete search results
+  const fetchFullSearchResults = useCallback(async (search: string) => {
+    try {
+      setIsLoading(true);
+      setMessage(null);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        setMessage("Search timed out. Please try again.");
+      }, API_TIMEOUT);
+
+      const results = await apiClient.searchDrugs(search, { limit: 100, signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      const sortedResults = [...results].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+
+      setSearchResults(sortedResults);
+      setMessage(
+        sortedResults.length === 0
+          ? "No results found. Please refine your search."
+          : null
+      );
+    } catch (error: unknown) {
+      setSearchResults([]);
+      setMessage(
+        error instanceof Error && error.name === "AbortError"
+          ? "Search timed out. Please try again."
+          : error instanceof Error
+            ? error.message
+            : "Failed to fetch results. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Handles search form submission
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!query.trim()) {
       setMessage("Please enter a search query.");
       return;
@@ -217,52 +242,19 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
     setMessage(null);
     setSearchResults([]);
     setSuggestions([]);
-
     await fetchFullSearchResults(query.trim());
   };
 
-  /**
-   * Handles clicking on a suggestion
-   */
+  // Handles clicking on a suggestion or result
   const handleSuggestionClick = useCallback(
     (drug: Drug) => {
-      onDrugSelect(drug); // Pass selected drug to parent
-      clearSearch(); // Clear search input and suggestions
-      setIsFocused(false); // Hide suggestions
+      onDrugSelect(drug);
+      setSearchResults([]);
+      setQuery("");
+      attemptFocus();
     },
-    [onDrugSelect, clearSearch]
+    [onDrugSelect, attemptFocus]
   );
-
-  // Render minimal UI until mounted to avoid hydration mismatch
-  if (!isMounted) {
-    return (
-      <div className={styles.searchContainer}>
-        <form role="search">
-          <div className={styles.inputWrapper}>
-            <div className={styles.searchIconWrapper}>
-              <FaSearch className={styles.searchIcon} aria-hidden="true" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search drugs..."
-              className={styles.searchInput}
-              aria-label="Search drugs"
-              disabled
-            />
-            <button
-              type="submit"
-              disabled
-              className={styles.searchButton}
-              aria-label="Search"
-            >
-              <span>Search</span>
-              <FaArrowRight aria-hidden="true" />
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.searchContainer} ref={containerRef}>
@@ -277,10 +269,17 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
           </div>
 
           <input
+            ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setIsFocused(true)}
+            onChange={(e) => {
+              const newQuery = e.target.value;
+              setQuery(newQuery);
+              setIsFocused(true);
+            }}
+            onFocus={() => {
+              setIsFocused(true);
+            }}
             placeholder="Search drugs..."
             className={styles.searchInput}
             aria-label="Search drugs"
@@ -291,7 +290,13 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
           {query && (
             <button
               type="button"
-              onClick={clearSearch}
+              onClick={() => {
+                setQuery("");
+                setSuggestions([]);
+                setSearchResults([]);
+                setMessage(null);
+                attemptFocus();
+              }}
               className={styles.clearButton}
               aria-label="Clear search"
             >
@@ -382,7 +387,7 @@ const SearchBar = memo(function SearchBar({ onDrugSelect }: SearchBarProps) {
               <li
                 key={`result-${drug.id}`}
                 className={styles.resultItem}
-                onClick={() => handleSuggestionClick(drug)} // Use same handler for consistency
+                onClick={() => handleSuggestionClick(drug)}
                 role="option"
                 aria-selected="false"
               >

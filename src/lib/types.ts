@@ -9,4 +9,5 @@ export interface Drug {
   clinical_practical_considerations: string;
   is_emergency?: number;
   url?: string;
+  
 }
