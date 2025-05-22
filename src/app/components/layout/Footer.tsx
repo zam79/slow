@@ -6,15 +6,23 @@ export default function Footer() {
     <footer className={styles.footer} role="contentinfo">
       <div className={styles.footerContent}>
         <p>© 2025 Drugbit.info. All rights reserved.</p>
-        <Link href="/about" className={styles.footerLink}>
-          About
-        </Link>
-        <Link href="/contact" className={styles.footerLink}>
-          Contact
-        </Link>
-        <Link href="/privacy" className={styles.footerLink}>
-          Privacy Policy
-        </Link>
+        <ul className={styles.footerNavList}>
+          <li>
+            <Link href="/about" className={styles.footerNavLink}>
+              About
+            </Link>
+          </li>
+          <li>
+            <Link href="/privacy" className={styles.footerNavLink}>
+              Privacy
+            </Link>
+          </li>
+          <li>
+            <Link href="/contact" className={styles.footerNavLink}>
+              Contact
+            </Link>
+          </li>
+        </ul>
       </div>
     </footer>
   );

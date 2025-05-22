@@ -1,3 +1,4 @@
+/* Existing styles (unchanged to preserve page layout) */
 .page {
   display: flex;
   flex-direction: column;
@@ -18,8 +19,8 @@
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-start; /* Logo on left, no need for space-between */
+  align-items: flex-start; /* Align logo and subtitle to top */
   padding: 16px 24px;
 }
 
@@ -60,7 +61,7 @@
   position: relative;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease;
-  z-index: 10; /* Below suggestions */
+  z-index: 10;
 }
 
 .heroSection::before {
@@ -93,7 +94,7 @@
   margin: 0 auto;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
-  z-index: 100; /* Above hero but below suggestions */
+  z-index: 100;
 }
 
 .searchWrapper:hover {
@@ -106,7 +107,7 @@
   width: 100%;
   display: flex;
   justify-content: center;
-  z-index: 5; /* Below suggestions */
+  z-index: 5;
 }
 
 .drugInfoContainer {
@@ -116,7 +117,7 @@
   max-width: 700px;
   width: 100%;
   padding: 1.5rem;
-  z-index: 5; /* Below suggestions */
+  z-index: 5;
 }
 
 .footer {
@@ -134,26 +135,9 @@
   margin: 0 auto;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: space-between; /* Spread copyright and links */
   align-items: center;
   gap: 16px;
-}
-
-.footerLink {
-  color: #ffffff;
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.footerLink:hover {
-  color: #2dd4bf;
-  transform: translateY(-1px);
-}
-
-.footerLink:focus {
-  outline: none;
-  border-bottom: 2px solid #2dd4bf;
 }
 
 .loading {
@@ -163,37 +147,47 @@
   text-align: center;
 }
 
-.navLink {
-  background: linear-gradient(90deg, #1e40af 0%, #fb923c 100%);
-  color: #ffffff;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 1rem;
+/* New styles for footer navigation links */
+.footerNavList {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end; /* Align links to the right */
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 8px; /* Compact spacing */
+}
+
+.footerNavLink {
+  color: #ffffff; /* White text to match footer */
+  padding: 6px 12px; /* Smaller padding for compact links */
+  border-radius: 6px;
+  font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
+  text-align: center;
   transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.navLink:hover {
-  background: linear-gradient(90deg, #1d4ed8 0%, #f59e0b 100%);
+.footerNavLink:hover {
+  background: rgba(255, 255, 255, 0.2); /* Subtle background on hover */
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.navLink:focus {
+.footerNavLink:focus {
   outline: none;
   border: 2px solid #2dd4bf;
   box-shadow: 0 0 8px rgba(45, 212, 191, 0.3);
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments for mobile */
 @media (max-width: 768px) {
   .headerContent {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
     padding: 12px 16px;
     gap: 8px;
+    align-items: center; /* Center logo and subtitle on mobile */
   }
 
   .titleWrapper {
@@ -227,8 +221,18 @@
   }
 
   .footerContent {
-    flex-direction: column;
+    flex-direction: column; /* Stack copyright and links vertically */
     gap: 12px;
+  }
+
+  .footerNavList {
+    flex-direction: column; /* Stack links vertically on mobile */
+    gap: 12px;
+  }
+
+  .footerNavLink {
+    padding: 8px 16px; /* Slightly larger padding for mobile */
+    font-size: 1rem; /* Larger font for mobile */
   }
 }
 
