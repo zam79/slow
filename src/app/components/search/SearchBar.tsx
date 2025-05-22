@@ -2,25 +2,19 @@
 
 import { useState, useEffect, useCallback, memo, useRef } from "react";
 import { FaSearch, FaTimes, FaArrowRight } from "react-icons/fa";
-import styles from "./search.module.css";
 import { debounce } from "@/lib/debounce";
 import { apiClient } from "@/lib/api";
 import { Drug } from "@/lib/types";
 
-// Configuration constants
-const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes cache
-const MIN_SEARCH_CHARS = 2; // Minimum characters before searching
-const MAX_SUGGESTIONS = 10; // Max suggestions to show
-const DEBOUNCE_DELAY = 300; // Debounce delay in ms
-const API_TIMEOUT = 5000; // 5-second API timeout
+const CACHE_DURATION = 15 * 60 * 1000;
+const MIN_SEARCH_CHARS = 2;
+const MAX_SUGGESTIONS = 10;
+const DEBOUNCE_DELAY = 300;
+const API_TIMEOUT = 5000;
 
-// Type for cached suggestions
 type SuggestionCache = Record<
   string,
-  {
-    data: Drug[];
-    timestamp: number;
-  }
+  { data: Drug[]; timestamp: number }
 >;
 
 interface SearchBarProps {
@@ -32,7 +26,6 @@ const SearchBar = memo(function SearchBar({
   onDrugSelect,
   resetTrigger,
 }: SearchBarProps) {
-  // State management
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Drug[]>([]);
   const [searchResults, setSearchResults] = useState<Drug[]>([]);
@@ -41,13 +34,11 @@ const SearchBar = memo(function SearchBar({
   const [message, setMessage] = useState<string | null>(null);
   const [cache, setCache] = useState<SuggestionCache>({});
 
-  // Hooks and refs
   const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
   const containerRef = useRef<HTMLDivElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Attempt to focus input
   const attemptFocus = useCallback(() => {
     setTimeout(() => {
       if (inputRef.current) {
@@ -57,7 +48,6 @@ const SearchBar = memo(function SearchBar({
     }, 100);
   }, []);
 
-  // Handle mount/unmount
   useEffect(() => {
     attemptFocus();
     return () => {
@@ -65,7 +55,6 @@ const SearchBar = memo(function SearchBar({
     };
   }, [attemptFocus]);
 
-  // Reset search bar when resetTrigger changes
   useEffect(() => {
     setQuery("");
     setSuggestions([]);
@@ -75,14 +64,12 @@ const SearchBar = memo(function SearchBar({
     attemptFocus();
   }, [resetTrigger, attemptFocus]);
 
-  // Maintain focus during typing
   useEffect(() => {
     if (query.trim() && !isFocused) {
       attemptFocus();
     }
   }, [query, isFocused, attemptFocus]);
 
-  // Fetches search suggestions with caching and timeout
   const fetchSuggestions = useCallback(
     async (search: string) => {
       if (search.length < MIN_SEARCH_CHARS) {
@@ -112,7 +99,10 @@ const SearchBar = memo(function SearchBar({
           setMessage("Search timed out. Please try again.");
         }, API_TIMEOUT);
 
-        const results = await apiClient.searchDrugs(search, { limit: 100, signal: controller.signal });
+        const results = await apiClient.searchDrugs(search, {
+          limit: 100,
+          signal: controller.signal,
+        });
         clearTimeout(timeoutId);
 
         const validResults = results;
@@ -135,8 +125,8 @@ const SearchBar = memo(function SearchBar({
           error instanceof Error && error.name === "AbortError"
             ? "Search timed out. Please try again."
             : error instanceof Error
-              ? error.message
-              : "Failed to fetch suggestions. Please try again."
+            ? error.message
+            : "Failed to fetch suggestions. Please try again."
         );
       } finally {
         setIsLoading(false);
@@ -145,7 +135,6 @@ const SearchBar = memo(function SearchBar({
     [cache]
   );
 
-  // Setup debounce effect
   useEffect(() => {
     debouncedFetchRef.current = debounce((search: string) => {
       fetchSuggestions(search);
@@ -155,7 +144,6 @@ const SearchBar = memo(function SearchBar({
     };
   }, [fetchSuggestions]);
 
-  // Handle query changes
   useEffect(() => {
     if (query.trim()) {
       setIsLoading(true);
@@ -168,7 +156,6 @@ const SearchBar = memo(function SearchBar({
     }
   }, [query]);
 
-  // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -187,7 +174,6 @@ const SearchBar = memo(function SearchBar({
     };
   }, []);
 
-  // Fetches complete search results
   const fetchFullSearchResults = useCallback(async (search: string) => {
     try {
       setIsLoading(true);
@@ -198,7 +184,10 @@ const SearchBar = memo(function SearchBar({
         setMessage("Search timed out. Please try again.");
       }, API_TIMEOUT);
 
-      const results = await apiClient.searchDrugs(search, { limit: 100, signal: controller.signal });
+      const results = await apiClient.searchDrugs(search, {
+        limit: 100,
+        signal: controller.signal,
+      });
       clearTimeout(timeoutId);
 
       const sortedResults = [...results].sort((a, b) =>
@@ -217,15 +206,14 @@ const SearchBar = memo(function SearchBar({
         error instanceof Error && error.name === "AbortError"
           ? "Search timed out. Please try again."
           : error instanceof Error
-            ? error.message
-            : "Failed to fetch results. Please try again."
+          ? error.message
+          : "Failed to fetch results. Please try again."
       );
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Handles search form submission
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) {
@@ -245,7 +233,6 @@ const SearchBar = memo(function SearchBar({
     await fetchFullSearchResults(query.trim());
   };
 
-  // Handles clicking on a suggestion or result
   const handleSuggestionClick = useCallback(
     (drug: Drug) => {
       onDrugSelect(drug);
@@ -257,15 +244,15 @@ const SearchBar = memo(function SearchBar({
   );
 
   return (
-    <div className={styles.searchContainer} ref={containerRef}>
+    <div className="relative w-full max-w-3xl mx-auto" ref={containerRef}>
       <form onSubmit={handleSearch} role="search">
         <div
-          className={`${styles.inputWrapper} ${
-            isFocused ? styles.focused : ""
+          className={`flex items-center bg-gradient-search rounded-2xl shadow-lg border-2 border-blue-900 overflow-visible transition-all duration-300 ease-in-out ${
+            isFocused ? "border-teal-400 shadow-[0_6px_16px_rgba(45,212,191,0.2)] -translate-y-1" : ""
           }`}
         >
-          <div className={styles.searchIconWrapper}>
-            <FaSearch className={styles.searchIcon} aria-hidden="true" />
+          <div className="flex items-center px-3">
+            <FaSearch className="text-gray-500 text-xl" aria-hidden="true" />
           </div>
 
           <input
@@ -281,7 +268,7 @@ const SearchBar = memo(function SearchBar({
               setIsFocused(true);
             }}
             placeholder="Search drugs..."
-            className={styles.searchInput}
+            className="flex-1 border-none bg-transparent text-base py-3 text-blue-900 outline-none placeholder-gray-400"
             aria-label="Search drugs"
             aria-controls="search-suggestions"
             aria-autocomplete="list"
@@ -297,25 +284,25 @@ const SearchBar = memo(function SearchBar({
                 setMessage(null);
                 attemptFocus();
               }}
-              className={styles.clearButton}
+              className="bg-none border-none px-3 cursor-pointer flex items-center"
               aria-label="Clear search"
             >
-              <FaTimes className={styles.clearIcon} aria-hidden="true" />
+              <FaTimes className="text-gray-500 text-xl" aria-hidden="true" />
             </button>
           )}
 
           <button
             type="submit"
             disabled={!query.trim() || isLoading}
-            className={`${styles.searchButton} ${
-              isLoading ? styles.loading : ""
+            className={`bg-gradient-button text-white px-6 py-3 rounded-xl border-none text-sm font-semibold cursor-pointer flex items-center gap-2 transition-all duration-200 ease-in-out hover:bg-gradient-button-hover hover:-translate-y-px focus:outline-none focus:shadow-[0_0_8px_rgba(45,212,191,0.3)] ${
+              isLoading ? "cursor-not-allowed opacity-70" : ""
             }`}
             aria-label={isLoading ? "Searching..." : "Search"}
             aria-busy={isLoading}
           >
             {isLoading ? (
               <>
-                <span className={styles.spinnerDots} aria-hidden="true"></span>
+                <span className="spinner" aria-hidden="true"></span>
                 <FaArrowRight aria-hidden="true" />
               </>
             ) : (
@@ -329,7 +316,7 @@ const SearchBar = memo(function SearchBar({
       </form>
 
       {message && (
-        <div className={`${styles.message} ${styles.error}`} role="status">
+        <div className="px-3 py-3 text-sm text-center text-red-600" role="status">
           {message}
         </div>
       )}
@@ -337,31 +324,31 @@ const SearchBar = memo(function SearchBar({
       {isFocused && suggestions.length > 0 && !searchResults.length && (
         <div
           id="search-suggestions"
-          className={styles.suggestionsContainer}
+          className="absolute top-full left-0 right-0 bg-white rounded-lg shadow-xl max-h-[300px] overflow-y-auto z-[1000]"
           ref={suggestionsRef}
           role="listbox"
           aria-labelledby="search-input"
         >
-          <ul className={styles.suggestionsList}>
+          <ul className="list-none m-0 p-0">
             {suggestions.map((drug) => (
               <li
                 key={`suggestion-${drug.id}`}
-                className={styles.suggestionItem}
+                className="px-4 py-3 cursor-pointer text-sm text-blue-900 flex justify-between items-center hover:bg-gray-100"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSuggestionClick(drug)}
                 role="option"
                 aria-selected="false"
               >
-                <div className={styles.suggestionContent}>
-                  <span className={styles.drugName}>
+                <div className="flex flex-col">
+                  <span className="font-semibold">
                     {drug.name.replace(/-/g, " ")}
                   </span>
                   {drug.trade_name && (
-                    <span className={styles.tradeName}>{drug.trade_name}</span>
+                    <span className="text-xs text-gray-500">{drug.trade_name}</span>
                   )}
                 </div>
                 <FaArrowRight
-                  className={styles.suggestionIcon}
+                  className="text-orange-400 text-sm"
                   aria-hidden="true"
                 />
               </li>
@@ -372,35 +359,35 @@ const SearchBar = memo(function SearchBar({
 
       {searchResults.length > 0 && (
         <div
-          className={styles.resultsContainer}
+          className="mt-4 bg-white rounded-lg shadow-xl p-4"
           role="region"
           aria-live="polite"
         >
-          <h3 className={styles.resultsTitle} id="search-results-title">
+          <h3 className="text-xl font-semibold text-blue-900 mb-3" id="search-results-title">
             Search Results
           </h3>
           <ul
-            className={styles.resultsList}
+            className="list-none m-0 p-0"
             aria-labelledby="search-results-title"
           >
             {searchResults.map((drug) => (
               <li
                 key={`result-${drug.id}`}
-                className={styles.resultItem}
+                className="px-3 py-3 cursor-pointer text-sm text-blue-900 flex justify-between items-center hover:bg-gray-100"
                 onClick={() => handleSuggestionClick(drug)}
                 role="option"
                 aria-selected="false"
               >
-                <div className={styles.resultContent}>
-                  <span className={styles.drugName}>
+                <div className="flex flex-col">
+                  <span className="font-semibold">
                     {drug.name.replace(/-/g, " ")}
                   </span>
                   {drug.trade_name && (
-                    <span className={styles.tradeName}>{drug.trade_name}</span>
+                    <span className="text-xs text-gray-500">{drug.trade_name}</span>
                   )}
                 </div>
                 <FaArrowRight
-                  className={styles.resultIcon}
+                  className="text-orange-400 text-sm"
                   aria-hidden="true"
                 />
               </li>

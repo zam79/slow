@@ -3,7 +3,6 @@ import dynamic from "next/dynamic";
 import { apiClient } from "@/lib/api";
 import { Drug } from "@/lib/types";
 import { Metadata } from "next";
-import styles from "./drug.module.css";
 import Header from "../../components/layout/Header";
 import Footer from "../../components/layout/Footer";
 
@@ -12,7 +11,6 @@ const DrugInfo = dynamic(() => import("../../components/drug/DrugInfo"), {
   loading: () => <div>Loading drug details...</div>,
 });
 
-// Module-scoped cache
 const drugCache = new Map<string, Drug | null>();
 
 export async function generateStaticParams() {
@@ -49,7 +47,7 @@ export async function generateMetadata({
 
   let drug = drugCache.get(decodedName);
   if (!drug) {
-    drug = await apiClient.getDrugByName(decodedName); // Updated to getDrugByName
+    drug = await apiClient.getDrugByName(decodedName);
     drugCache.set(decodedName, drug);
   }
 
@@ -92,7 +90,7 @@ export default async function DrugPage({ params }: DrugPageProps) {
 
   let drug = drugCache.get(decodedName);
   if (!drug) {
-    drug = await apiClient.getDrugByName(decodedName); // Updated to getDrugByName
+    drug = await apiClient.getDrugByName(decodedName);
     drugCache.set(decodedName, drug);
   }
 
@@ -101,11 +99,13 @@ export default async function DrugPage({ params }: DrugPageProps) {
   }
 
   return (
-    <div className={styles.page}>
-      <Header showNav={true} />
-      <main className={styles.main}>
-        <section className={styles.heroSection}>
-          <h1 className={styles.heroTitle}>{drug.name}</h1>
+    <div className="flex flex-col min-h-screen bg-gray-100 font-inter">
+      <Header /> {/* Removed showNav prop */}
+      <main className="flex-1 max-w-5xl mx-auto px-6 py-8 w-full sm:px-4 sm:py-8">
+        <section className="bg-gradient-hero rounded-2xl px-6 py-12 text-center text-white relative shadow-2xl transition-transform duration-300 ease-in-out z-10 hero-overlay hover:-translate-y-1 sm:px-4 sm:py-8 sm:rounded-xl">
+          <h1 className="text-4xl font-bold mb-4 leading-tight relative z-10 shadow-[0_2px_4px_rgba(0,0,0,0.3)] sm:text-3xl xs:text-2xl">
+            {drug.name}
+          </h1>
         </section>
         <DrugInfo drug={drug} />
       </main>

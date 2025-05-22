@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useState, useCallback } from "react";
-import styles from "./page.module.css";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import ClientSearch from "./components/search/ClientSearch";
@@ -14,24 +13,38 @@ export default function Home() {
 
   const handleDrugSelect = useCallback((drug: Drug | null) => {
     setSelectedDrug(drug);
-    setResetTrigger((prev) => prev + 1); // Increment for reset
+    setResetTrigger((prev) => prev + 1);
   }, []);
 
   return (
-    <div className={styles.page}>
+    <div className="flex flex-col min-h-screen bg-gray-100 font-inter">
       <Header />
-      <main className={styles.main}>
-        <section className={styles.heroSection}>
-          <h1 className={styles.heroTitle}>Drugs in Anesthesia and Critical Care</h1>
-          <Suspense fallback={<div className={styles.loading}>Loading search...</div>}>
+      <main className="flex-1 max-w-5xl mx-auto px-6 py-8 w-full sm:px-4 sm:py-6">
+        <section className="bg-gradient-hero rounded-2xl px-6 py-12 text-center text-white relative shadow-2xl transition-transform duration-300 ease-in-out z-10 hero-overlay hover:-translate-y-1 sm:px-4 sm:py-8 sm:rounded-xl">
+          <h1 className="text-4xl font-bold mb-4 leading-tight relative z-10 shadow-[0_2px_4px_rgba(0,0,0,0.3)] sm:text-3xl xs:text-2xl">
+            Drugs in Anesthesia and Critical Care
+          </h1>
+          <Suspense
+            fallback={
+              <div className="px-4 py-4 text-gray-500 text-sm text-center">
+                Loading search...
+              </div>
+            }
+          >
             <ClientSearch
               onDrugSelect={handleDrugSelect}
               resetTrigger={resetTrigger}
             />
           </Suspense>
         </section>
-        <section className={styles.drugInfoSection}>
-          <Suspense fallback={<div className={styles.loading}>Loading drug info...</div>}>
+        <section className="mt-8 w-full flex justify-center z-20 sm:mt-6">
+          <Suspense
+            fallback={
+              <div className="px-4 py-4 text-gray-500 text-sm text-center">
+                Loading drug info...
+              </div>
+            }
+          >
             <SearchWrapper selectedDrug={selectedDrug} />
           </Suspense>
         </section>

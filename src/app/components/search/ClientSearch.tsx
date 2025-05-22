@@ -2,12 +2,15 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, Component, ReactNode, useCallback } from "react";
-import styles from "./search.module.css";
 import { Drug } from "@/lib/types";
 
 const SearchBar = dynamic(() => import("./SearchBar"), {
   ssr: false,
-  loading: () => <div className={styles.searchLoading}>Loading search...</div>,
+  loading: () => (
+    <div className="px-3 py-3 text-center text-gray-500 text-sm">
+      Loading search...
+    </div>
+  ),
 });
 
 interface ErrorBoundaryProps {
@@ -29,8 +32,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className={styles.errorContainer}>
-          <p>Failed to load search component: {this.state.error?.message || "Unknown error"}</p>
+        <div className="p-4 text-red-600 text-center">
+          <p>
+            Failed to load search component:{" "}
+            {this.state.error?.message || "Unknown error"}
+          </p>
         </div>
       );
     }
@@ -43,16 +49,27 @@ interface ClientSearchProps {
   resetTrigger: number;
 }
 
-export default function ClientSearch({ onDrugSelect, resetTrigger }: ClientSearchProps) {
-  // Memoize onDrugSelect to prevent rerenders
-  const handleDrugSelect = useCallback((drug: Drug) => {
-    onDrugSelect(drug);
-  }, [onDrugSelect]);
+export default function ClientSearch({
+  onDrugSelect,
+  resetTrigger,
+}: ClientSearchProps) {
+  const handleDrugSelect = useCallback(
+    (drug: Drug) => {
+      onDrugSelect(drug);
+    },
+    [onDrugSelect]
+  );
 
   return (
     <ErrorBoundary>
-      <Suspense fallback={<div className={styles.skeletonSearch}>Loading...</div>}>
-        <div className={styles.searchWrapper}>
+      <Suspense
+        fallback={
+          <div className="animate-pulse bg-gray-200 h-16 rounded-xl">
+            Loading...
+          </div>
+        }
+      >
+        <div className="max-w-3xl mx-auto relative z-[100] transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-2xl">
           <SearchBar
             key="search-bar"
             onDrugSelect={handleDrugSelect}
