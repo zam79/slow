@@ -17,7 +17,7 @@ const ExpandableSection: React.FC<{
     <div className="mb-4">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-left bg-gradient-to-r from-blue-800 to-orange-400 text-white px-4 py-3 rounded-lg font-semibold flex justify-between items-center transition-all duration-300 hover:from-blue-900 hover:to-orange-500 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-30 shadow-sm"
+        className="w-full text-left bg-gradient-to-r from-blue-800 to-orange-400 text-white px-4 py-3 rounded-lg font-semibold flex justify-between items-center transition-all duration-300 hover:from-blue-900 hover:to-orange-500 hover:shadow-md active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-30 shadow-sm"
       >
         {title}
         <span className="text-xs">{isOpen ? "▲" : "▼"}</span>
@@ -35,7 +35,7 @@ export default function DrugInfo({ drug }: DrugInfoProps) {
   return (
     <div className="font-inter">
       {/* Hero Card with Drug Name */}
-      <div className="max-w-[800px] mx-auto bg-gradient-to-br from-blue-800 to-orange-400 rounded-[16px] p-6 text-center text-white relative shadow-[0_8px_24px_rgba(0,0,0,0.15)] transition-transform duration-300 hover:-translate-y-1 flex justify-center items-center min-h-[120px] z-10">
+      <div className="max-w-[800px] mx-auto bg-gradient-to-br from-blue-800 to-orange-400 rounded-[16px] p-6 text-center text-white relative shadow-[0_8px_24px_rgba(0,0,0,0.15)] transition-all duration-300 hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] flex justify-center items-center min-h-[120px] z-0">
         <div className="absolute inset-0 bg-black bg-opacity-15 rounded-[16px] z-0"></div>
         <h1 className="text-3xl md:text-4xl font-bold relative z-10 text-shadow">
           {drug.name}
@@ -43,7 +43,7 @@ export default function DrugInfo({ drug }: DrugInfoProps) {
       </div>
 
       {/* Main Content Container */}
-      <div className="bg-white rounded-[16px] shadow-[0_8px_24px_rgba(0,0,0,0.1)] max-w-[800px] mx-auto my-4 p-8">
+      <div className="bg-white rounded-[16px] shadow-[0_8px_24px_rgba(0,0,0,0.1)] max-w-[800px] mx-auto my-4 p-8 z-0">
         {/* Trade Name */}
         {drug.trade_name && (
           <p className="mb-4 text-xl text-gray-500 font-light">
@@ -83,7 +83,7 @@ export default function DrugInfo({ drug }: DrugInfoProps) {
               href={drug.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-gradient-to-r from-blue-800 to-orange-400 text-white px-4 py-2 rounded-lg font-medium no-underline transition-all duration-200 hover:text-teal-300 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="inline-block bg-gradient-to-r from-blue-800 to-orange-400 text-white px-4 py-2 rounded-lg font-medium no-underline transition-all duration-200 hover:text-teal-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-400"
             >
               External Link
             </a>

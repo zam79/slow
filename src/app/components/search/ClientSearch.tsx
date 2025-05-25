@@ -69,7 +69,7 @@ export default function ClientSearch({
           </div>
         }
       >
-        <div className="max-w-3xl mx-auto relative z-[100] transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-2xl">
+        <div className="max-w-3xl mx-auto relative z-[9500] transition-all duration-300 ease-in-out hover:shadow-2xl">
           <SearchBar
             key="search-bar"
             onDrugSelect={handleDrugSelect}

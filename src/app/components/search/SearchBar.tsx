@@ -244,7 +244,7 @@ const SearchBar = memo(function SearchBar({
   );
 
   return (
-    <div className="relative w-full max-w-3xl mx-auto" ref={containerRef}>
+    <div className="relative w-full max-w-3xl mx-auto z-[9000]" ref={containerRef}>
       <form onSubmit={handleSearch} role="search">
         <div
           className={`flex items-center bg-gradient-search rounded-2xl shadow-lg border-2 border-blue-900 overflow-visible transition-all duration-300 ease-in-out ${
@@ -324,7 +324,7 @@ const SearchBar = memo(function SearchBar({
       {isFocused && suggestions.length > 0 && !searchResults.length && (
         <div
           id="search-suggestions"
-          className="absolute top-full left-0 right-0 bg-white rounded-lg shadow-xl max-h-[300px] overflow-y-auto z-[1000]"
+          className="absolute top-full left-0 right-0 bg-white rounded-lg shadow-xl max-h-[300px] overflow-y-auto z-[9999]"
           ref={suggestionsRef}
           role="listbox"
           aria-labelledby="search-input"
@@ -359,7 +359,7 @@ const SearchBar = memo(function SearchBar({
 
       {searchResults.length > 0 && (
         <div
-          className="mt-4 bg-white rounded-lg shadow-xl p-4"
+          className="mt-4 bg-white rounded-lg shadow-xl p-4 z-[8000]"
           role="region"
           aria-live="polite"
         >

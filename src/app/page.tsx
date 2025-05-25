@@ -19,8 +19,8 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 font-inter">
       <Header />
-      <main className="flex-1 max-w-5xl mx-auto px-6 py-8 w-full sm:px-4 sm:py-6">
-        <section className="bg-gradient-hero rounded-2xl px-6 py-12 text-center text-white relative shadow-2xl transition-transform duration-300 ease-in-out z-10 hero-overlay hover:-translate-y-1 sm:px-4 sm:py-8 sm:rounded-xl">
+      <main className="flex-1 max-w-5xl mx-auto px-6 py-8 w-full sm:px-4 sm:py-6 z-auto">
+        <section className="bg-gradient-hero rounded-2xl px-6 py-12 text-center text-white relative shadow-2xl transition-all duration-300 ease-in-out z-[5] hero-overlay hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] sm:px-4 sm:py-8 sm:rounded-xl">
           <h1 className="text-4xl font-bold mb-4 leading-tight relative z-10 shadow-[0_2px_4px_rgba(0,0,0,0.3)] sm:text-3xl xs:text-2xl">
             Drugs in Anesthesia and Critical Care
           </h1>
@@ -37,7 +37,7 @@ export default function Home() {
             />
           </Suspense>
         </section>
-        <section className="mt-8 w-full flex justify-center z-20 sm:mt-6">
+        <section className="mt-8 w-full flex justify-center z-0 sm:mt-6">
           <Suspense
             fallback={
               <div className="px-4 py-4 text-gray-500 text-sm text-center">
