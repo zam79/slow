@@ -33,6 +33,7 @@ const SearchBar = memo(function SearchBar({
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [cache, setCache] = useState<SuggestionCache>({});
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1); // Track selected suggestion
 
   const debouncedFetchRef = useRef<ReturnType<typeof debounce>>();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -61,6 +62,7 @@ const SearchBar = memo(function SearchBar({
     setSearchResults([]);
     setIsLoading(false);
     setMessage(null);
+    setSelectedIndex(-1); // Reset selected index on reset
     attemptFocus();
   }, [resetTrigger, attemptFocus]);
 
@@ -76,6 +78,7 @@ const SearchBar = memo(function SearchBar({
         setSuggestions([]);
         setIsLoading(false);
         setMessage(null);
+        setSelectedIndex(-1);
         return;
       }
 
@@ -88,6 +91,7 @@ const SearchBar = memo(function SearchBar({
         setSuggestions(cache[cacheKey].data);
         setIsLoading(false);
         setMessage(null);
+        setSelectedIndex(-1);
         return;
       }
 
@@ -119,6 +123,7 @@ const SearchBar = memo(function SearchBar({
         setMessage(
           validResults.length === 0 ? "No suggestions found." : null
         );
+        setSelectedIndex(-1);
       } catch (error: unknown) {
         setSuggestions([]);
         setMessage(
@@ -128,6 +133,7 @@ const SearchBar = memo(function SearchBar({
             ? error.message
             : "Failed to fetch suggestions. Please try again."
         );
+        setSelectedIndex(-1);
       } finally {
         setIsLoading(false);
       }
@@ -153,6 +159,7 @@ const SearchBar = memo(function SearchBar({
       setSearchResults([]);
       setIsLoading(false);
       setMessage(null);
+      setSelectedIndex(-1);
     }
   }, [query]);
 
@@ -165,6 +172,7 @@ const SearchBar = memo(function SearchBar({
         !suggestionsRef.current.contains(event.target as Node)
       ) {
         setSuggestions([]);
+        setSelectedIndex(-1);
       }
     };
 
@@ -200,6 +208,7 @@ const SearchBar = memo(function SearchBar({
           ? "No results found. Please refine your search."
           : null
       );
+      setSelectedIndex(-1);
     } catch (error: unknown) {
       setSearchResults([]);
       setMessage(
@@ -209,6 +218,7 @@ const SearchBar = memo(function SearchBar({
           ? error.message
           : "Failed to fetch results. Please try again."
       );
+      setSelectedIndex(-1);
     } finally {
       setIsLoading(false);
     }
@@ -230,6 +240,7 @@ const SearchBar = memo(function SearchBar({
     setMessage(null);
     setSearchResults([]);
     setSuggestions([]);
+    setSelectedIndex(-1);
     await fetchFullSearchResults(query.trim());
   };
 
@@ -238,9 +249,44 @@ const SearchBar = memo(function SearchBar({
       onDrugSelect(drug);
       setSearchResults([]);
       setQuery("");
+      setSuggestions([]);
+      setSelectedIndex(-1);
       attemptFocus();
     },
     [onDrugSelect, attemptFocus]
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!suggestions.length || searchResults.length) return;
+
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < suggestions.length - 1 ? prev + 1 : prev
+          );
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+            handleSuggestionClick(suggestions[selectedIndex]);
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          setSuggestions([]);
+          setSelectedIndex(-1);
+          break;
+        default:
+          break;
+      }
+    },
+    [suggestions, selectedIndex, handleSuggestionClick, searchResults.length]
   );
 
   return (
@@ -263,15 +309,20 @@ const SearchBar = memo(function SearchBar({
               const newQuery = e.target.value;
               setQuery(newQuery);
               setIsFocused(true);
+              setSelectedIndex(-1); // Reset selection on query change
             }}
             onFocus={() => {
               setIsFocused(true);
             }}
+            onKeyDown={handleKeyDown}
             placeholder="Search drugs..."
             className="flex-1 border-none bg-transparent text-base py-3 text-blue-900 outline-none placeholder-gray-400"
             aria-label="Search drugs"
             aria-controls="search-suggestions"
             aria-autocomplete="list"
+            aria-activedescendant={
+              selectedIndex >= 0 ? `suggestion-${suggestions[selectedIndex]?.id}` : undefined
+            }
           />
 
           {query && (
@@ -282,6 +333,7 @@ const SearchBar = memo(function SearchBar({
                 setSuggestions([]);
                 setSearchResults([]);
                 setMessage(null);
+                setSelectedIndex(-1);
                 attemptFocus();
               }}
               className="bg-none border-none px-3 cursor-pointer flex items-center"
@@ -330,14 +382,17 @@ const SearchBar = memo(function SearchBar({
           aria-labelledby="search-input"
         >
           <ul className="list-none m-0 p-0">
-            {suggestions.map((drug) => (
+            {suggestions.map((drug, index) => (
               <li
                 key={`suggestion-${drug.id}`}
-                className="px-4 py-3 cursor-pointer text-sm text-blue-900 flex justify-between items-center hover:bg-gray-100"
+                id={`suggestion-${drug.id}`}
+                className={`px-4 py-3 cursor-pointer text-sm text-blue-900 flex justify-between items-center hover:bg-gray-100 ${
+                  index === selectedIndex ? "bg-gray-200" : ""
+                }`}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSuggestionClick(drug)}
                 role="option"
-                aria-selected="false"
+                aria-selected={index === selectedIndex}
               >
                 <div className="flex flex-col">
                   <span className="font-semibold">

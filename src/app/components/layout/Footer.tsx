@@ -1,18 +1,20 @@
+"use client";
+
 import Link from "next/link";
 
 export default function Footer() {
   return (
     <footer
-      className="bg-gradient-footer text-white text-center py-6 px-4 text-sm shadow-inner relative sm:py-4"
+      className="bg-gradient-footer text-white text-center py-3 px-4 text-sm shadow-inner relative"
       role="contentinfo"
     >
-      <div className="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-4 sm:flex-col sm:gap-3">
+      <div className="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-4">
         <p>© 2025 Drugbit.info. All rights reserved.</p>
-        <ul className="flex flex-row justify-end items-center list-none m-0 p-0 gap-2 sm:flex-col sm:gap-3">
+        <ul className="flex flex-row justify-end items-center list-none m-0 p-0 gap-2">
           <li>
             <Link
               href="/about"
-              className="text-white px-3 py-1.5 rounded-md text-sm font-semibold no-underline text-center transition-all duration-200 ease-in-out hover:bg-white/20 hover:-translate-y-px hover:shadow-md focus:outline-none focus:border-2 focus:border-teal-400 focus:shadow-[0_0_8px_rgba(45,212,191,0.3)] sm:px-4 sm:py-2 sm:text-base"
+              className="text-white px-3 py-1 rounded-md text-sm font-semibold no-underline text-center transition-all duration-200 ease-in-out hover:bg-white/20 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-30"
             >
               About
             </Link>
@@ -20,7 +22,7 @@ export default function Footer() {
           <li>
             <Link
               href="/privacy"
-              className="text-white px-3 py-1.5 rounded-md text-sm font-semibold no-underline text-center transition-all duration-200 ease-in-out hover:bg-white/20 hover:-translate-y-px hover:shadow-md focus:outline-none focus:border-2 focus:border-teal-400 focus:shadow-[0_0_8px_rgba(45,212,191,0.3)] sm:px-4 sm:py-2 sm:text-base"
+              className="text-white px-3 py-1 rounded-md text-sm font-semibold no-underline text-center transition-all duration-200 ease-in-out hover:bg-white/20 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-30"
             >
               Privacy
             </Link>
@@ -28,7 +30,7 @@ export default function Footer() {
           <li>
             <Link
               href="/contact"
-              className="text-white px-3 py-1.5 rounded-md text-sm font-semibold no-underline text-center transition-all duration-200 ease-in-out hover:bg-white/20 hover:-translate-y-px hover:shadow-md focus:outline-none focus:border-2 focus:border-teal-400 focus:shadow-[0_0_8px_rgba(45,212,191,0.3)] sm:px-4 sm:py-2 sm:text-base"
+              className="text-white px-3 py-1 rounded-md text-sm font-semibold no-underline text-center transition-all duration-200 ease-in-out hover:bg-white/20 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-30"
             >
               Contact
             </Link>

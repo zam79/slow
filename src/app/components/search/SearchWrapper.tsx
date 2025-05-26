@@ -42,9 +42,6 @@ const SearchWrapper = memo(function SearchWrapper({
 
   return (
     <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 z-0">
-      <div className="mb-4">
-        <h2>{selectedDrug.name}</h2>
-      </div>
       <ErrorBoundary>
         <Suspense
           fallback={
