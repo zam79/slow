@@ -71,12 +71,6 @@ export default function DrugInfo({ drug }: DrugInfoProps) {
           <p>{drug.clinical_practical_considerations}</p>
         </ExpandableSection>
 
-        {drug.is_emergency && (
-          <ExpandableSection title="Emergency Use">
-            <p>Yes</p>
-          </ExpandableSection>
-        )}
-
         {drug.url && (
           <ExpandableSection title="More Info">
             <a
